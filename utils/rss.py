@@ -21,7 +21,10 @@ def fetch_and_parse_feeds(feeds, cache_dir):
                 "source": cat
             }
             all_entries.append(e)
-        fname = os.path.join(cache_dir, f"{cat.replace(' ', '_')}.json")
-        with open(fname, "w", encoding="utf-8") as f:
-            json.dump(parsed.entries, f, default=str)
+            # Cache raw entries with a safe filename
+            safe_cat = cat.replace(' ', '_').replace('/', '_')
+            fname = os.path.join(cache_dir, f"{safe_cat}.json")
+            with open(fname, "w", encoding="utf-8") as f:
+                json.dump(parsed.entries, f, default=str)
+
     return all_entries
