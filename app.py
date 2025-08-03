@@ -2,7 +2,8 @@ import streamlit as st
 import feedparser
 import pyperclip
 import os
-from datetime import datetime
+import re
+from datetime import datetime, timedelta
 from utils.file_io import load_json, save_json
 from utils.rss import fetch_and_parse_feeds
 from utils.citation import build_apa_citation
@@ -26,45 +27,30 @@ archived = load_json(ARCHIVE_PATH, default=[])
 
 st.set_page_config(page_title="Personal RSS Reader", layout="wide")
 
-## Sidebar: controls
+# Sidebar controls
 st.sidebar.title("Settings")
 
 if st.sidebar.button("Refresh Feeds"):
-    st.spinner("Fetching latest articles...")
     st.rerun()
 
-show_arch = st.sidebar.checkbox(
-    "Show Archived", settings.get("show_archived", False)
-)
-sort_order = st.sidebar.selectbox(
-    "Sort Order", ["newest_first", "oldest_first"],
-    index=0
-)
+show_arch = st.sidebar.checkbox("Show Archived", settings.get("show_archived", False))
+sort_order = st.sidebar.selectbox("Sort Order", ["newest_first", "oldest_first"], index=0)
 
 include_text = ",".join(settings["filters"]["include_keywords"])
 exclude_text = ",".join(settings["filters"]["exclude_keywords"])
 
-include = st.sidebar.text_input(
-    "Include keywords (comma-separated)", value=include_text
-)
-exclude = st.sidebar.text_input(
-    "Exclude keywords (comma-separated)", value=exclude_text
-)
+include = st.sidebar.text_input("Include keywords (comma-separated)", value=include_text)
+exclude = st.sidebar.text_input("Exclude keywords (comma-separated)", value=exclude_text)
 
 settings["show_archived"] = show_arch
 settings["sort_order"] = sort_order
-settings["filters"]["include_keywords"] = [
-    k.strip() for k in include.split(",") if k.strip()
-]
-settings["filters"]["exclude_keywords"] = [
-    k.strip() for k in exclude.split(",") if k.strip()
-]
+settings["filters"]["include_keywords"] = [k.strip() for k in include.split(",") if k.strip()]
+settings["filters"]["exclude_keywords"] = [k.strip() for k in exclude.split(",") if k.strip()]
 save_json(SETTINGS_PATH, settings)
 
-## Manage RSS Feeds
+# Manage RSS feeds
 with st.sidebar.expander("Manage RSS Feeds"):
     st.write(feeds)
-
     new_url = st.text_input("New RSS URL")
     new_cat = st.text_input("Category")
 
@@ -78,9 +64,7 @@ with st.sidebar.expander("Manage RSS Feeds"):
             st.rerun()
 
     st.markdown("#### Bulk add feeds")
-    bulk = st.text_area(
-        "Paste one URL per line, or 'URL,Category'", height=150
-    )
+    bulk = st.text_area("Paste one URL per line, or 'URL,Category'", height=150)
     if st.button("Import Bulk") and bulk:
         lines = [l.strip() for l in bulk.splitlines() if l.strip()]
         added = 0
@@ -99,17 +83,23 @@ with st.sidebar.expander("Manage RSS Feeds"):
         st.success(f"Imported {added} new feeds")
         st.rerun()
 
-## Main view
 st.title("Personal News Reader")
 
+# Fetch and parse feeds
 with st.spinner("Loading articles..."):
     entries = fetch_and_parse_feeds(feeds, CACHE_DIR)
+
+# Only keep last 24 hours
+cutoff = datetime.now() - timedelta(days=1)
 
 filtered = []
 incs = [k.lower() for k in settings["filters"]["include_keywords"]]
 excs = [k.lower() for k in settings["filters"]["exclude_keywords"]]
 
 for e in entries:
+    pd = e.get("published_parsed")
+    if not pd or pd < cutoff:
+        continue
     if not show_arch and is_archived(e["link"], archived):
         continue
     text = (e.get("title", "") + " " + e.get("summary", "")).lower()
@@ -120,12 +110,16 @@ for e in entries:
     filtered.append(e)
 
 filtered.sort(
-    key=lambda x: x.get("published_parsed") or datetime.min,
+    key=lambda x: x.get("published_parsed"),
     reverse=(sort_order == "newest_first")
 )
 
 for entry in filtered:
     st.subheader(entry.get("title"))
+    raw = entry.get("summary", "")
+    clean = re.sub(r"<[^>]+>", "", raw).strip()
+    excerpt = clean if len(clean) <= 100 else clean[:100].rstrip() + "..."
+    st.write(excerpt)
     st.write(f"Source: {entry.get('source')}  |  Published: {entry.get('published')}")
     cols = st.columns(3)
     if cols[0].button("Copy Link", key=entry["link"]):
