@@ -32,7 +32,7 @@ archived = load_json(ARCHIVE_PATH, default=[])
 st.set_page_config(page_title="Personal RSS Reader", layout="wide")
 
 def refresh():
-    st.experimental_rerun()
+    st.rerun()
 
 # Sidebar controls
 st.sidebar.title("Settings")
