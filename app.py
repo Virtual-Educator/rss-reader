@@ -3,120 +3,100 @@ import feedparser
 import pyperclip
 import os
 from datetime import datetime
-from utils.file_io import load_json, save_json
+from utils.file_io import load_json
 from utils.rss import fetch_and_parse_feeds
 from utils.citation import build_apa_citation
 from utils.archive import is_archived, add_to_archive
 
-# Paths
+# ─── Page Config ─────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="Personal News Reader",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# ─── Paths and Data Load ─────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(__file__)
 FEEDS_PATH = os.path.join(BASE_DIR, "feeds.json")
-SETTINGS_PATH = os.path.join(BASE_DIR, "settings.json")
-AUTHORS_PATH = os.path.join(BASE_DIR, "authors.json")
 ARCHIVE_PATH = os.path.join(BASE_DIR, "read_articles.json")
 CACHE_DIR = os.path.join(BASE_DIR, "cache")
 
-# Load configuration and data
 feeds = load_json(FEEDS_PATH, default=[])
-settings = load_json(
-    SETTINGS_PATH,
-    default={
-        "show_archived": False,
-        "sort_order": "newest_first",
-        "filters": {"include_keywords": [], "exclude_keywords": []},
-    },
-)
-authors = load_json(AUTHORS_PATH, default={})
 archived = load_json(ARCHIVE_PATH, default=[])
 
-st.set_page_config(page_title="Personal News Reader", layout="wide")
-
-# Sidebar controls
-st.sidebar.title("Controls")
-if st.sidebar.button("Refresh"):
-    st.rerun()
-
-show_arch = st.sidebar.checkbox("Show archived", settings["show_archived"])
-sort_order = st.sidebar.selectbox("Sort by", ["newest_first", "oldest_first"], index=0)
-
-inc = st.sidebar.text_input(
-    "Include keywords", value=",".join(settings["filters"]["include_keywords"])
-)
-exc = st.sidebar.text_input(
-    "Exclude keywords", value=",".join(settings["filters"]["exclude_keywords"])
-)
-
-# Save sidebar settings
-settings["show_archived"] = show_arch
-settings["sort_order"] = sort_order
-settings["filters"]["include_keywords"] = [k.strip() for k in inc.split(",") if k.strip()]
-settings["filters"]["exclude_keywords"] = [k.strip() for k in exc.split(",") if k.strip()]
-save_json(SETTINGS_PATH, settings)
-
-st.title("Personal News Reader")
-
-# Fetch and dedupe
-with st.spinner("Loading…"):
+# ─── Fetch & Deduplicate ──────────────────────────────────────────────────────
+with st.spinner("Loading articles…"):
     raw = fetch_and_parse_feeds(feeds, CACHE_DIR)
-seen = set()
-entries = []
+
+seen, entries = set(), []
 for e in raw:
     link = e.get("link")
     if link and link not in seen:
         seen.add(link)
         entries.append(e)
 
-# Apply filters
-inc_lc = [k.lower() for k in settings["filters"]["include_keywords"]]
-exc_lc = [k.lower() for k in settings["filters"]["exclude_keywords"]]
+# ─── Top Controls: Refresh & Category Filter ─────────────────────────────────
+c1, c2 = st.columns([1, 4], gap="small")
+if c1.button("🔄 Refresh"):
+    st.rerun()
+
+categories = sorted({e["source"] for e in entries})
+selected_cat = c2.selectbox("Category", ["All"] + categories)
+
+# ─── Filter & Sort ────────────────────────────────────────────────────────────
 filtered = []
 for e in entries:
-    if not show_arch and is_archived(e["link"], archived):
+    if is_archived(e["link"], archived):
         continue
-    text = (e.get("title","") + " " + e.get("summary","")).lower()
-    if any(k in text for k in exc_lc):
-        continue
-    if inc_lc and not any(k in text for k in inc_lc):
+    if selected_cat != "All" and e["source"] != selected_cat:
         continue
     filtered.append(e)
 
 filtered.sort(
     key=lambda x: x.get("published_parsed") or datetime.min,
-    reverse=(sort_order == "newest_first"),
+    reverse=True
 )
 
-# Display with expanders
+# ─── Display Articles ─────────────────────────────────────────────────────────
 for idx, e in enumerate(filtered):
     title = e.get("title", "[No title]")
+    # Date
     if e.get("published_parsed"):
         date_str = e["published_parsed"].strftime("%Y-%m-%d")
     else:
         date_str = e.get("published", "")[:10]
+    # Source URL
     feed_url = e.get("feed_url", "")
 
-    with st.expander(f"{title} | {date_str}", expanded=False):
-        st.markdown(f"*Source: <{feed_url}>*")
+    left, right = st.columns((4, 1), gap="small")
 
-        # Summary snippet
-        full_summary = e.get("summary", "")
-        length = e.get("snippet_length", 150) or 150
-        snippet = full_summary[:length]
-        suffix = "..." if len(full_summary) > length else ""
-        st.write(snippet + suffix)
+    # Left: headline, meta, snippet
+    with left:
+        st.subheader(title)
+        st.markdown(f"*Source: <{feed_url}>  |  Date: {date_str}*")
+        full = e.get("summary", "")
+        snippet = full[:250]
+        more = "..." if len(full) > 250 else ""
+        st.write(snippet + more)
 
-        # Action buttons
-        c1, c2, c3 = st.columns([1, 1, 1])
-        if c1.button("Link", key=f"link_{idx}"):
+    # Right: actions dropdown
+    with right:
+        action = st.selectbox(
+            "Actions",
+            ["—", "Copy link", "Copy citation", "Print view", "Archive"],
+            key=f"act_{idx}"
+        )
+        if action == "Copy link":
             pyperclip.copy(e.get("link"))
             st.info("Link copied")
-        if c2.button("Cite", key=f"cite_{idx}"):
-            citation = build_apa_citation(e, authors)
-            pyperclip.copy(citation)
+        elif action == "Copy citation":
+            cit = build_apa_citation(e, {})
+            pyperclip.copy(cit)
             st.info("Citation copied")
-        if c3.button("Archive", key=f"arch_{idx}"):
+        elif action == "Print view":
+            st.markdown(f"[Open printable article]({e.get('link')})")
+        elif action == "Archive":
             add_to_archive(e.get("link"), ARCHIVE_PATH)
             st.info("Archived")
-
-        st.markdown(f"[Print]({e.get('link')})")
 
 st.caption("Powered by your local RSS reader")
