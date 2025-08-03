@@ -18,21 +18,26 @@ CACHE_DIR = os.path.join(BASE_DIR, "cache")
 
 # Load data from local files
 feeds = load_json(FEEDS_PATH, default=[])
-settings = load_json(SETTINGS_PATH, default={
-    "show_archived": False,
-    "sort_order": "newest_first",
-    "filters": {"include_keywords": [], "exclude_keywords": []}
-})
+settings = load_json(
+    SETTINGS_PATH,
+    default={
+        "show_archived": False,
+        "sort_order": "newest_first",
+        "filters": {"include_keywords": [], "exclude_keywords": []},
+    },
+)
 authors = load_json(AUTHORS_PATH, default={})
 archived = load_json(ARCHIVE_PATH, default=[])
 
 st.set_page_config(page_title="Personal RSS Reader", layout="wide")
 
-## Sidebar: Settings
+# Sidebar: settings
 st.sidebar.title("Settings")
 
-if st.sidebar.button("Refresh Feeds"):
+def refresh():
     st.experimental_rerun()
+
+st.sidebar.button("Refresh Feeds", on_click=refresh)
 
 show_arch = st.sidebar.checkbox(
     "Show archived items", settings.get("show_archived", False)
@@ -83,7 +88,7 @@ with st.sidebar.expander("Manage RSS feeds"):
         save_json(FEEDS_PATH, feeds)
         st.experimental_rerun()
 
-## Main view
+# Main view
 st.title("Personal news reader")
 
 entries = fetch_and_parse_feeds(feeds, CACHE_DIR)
@@ -107,12 +112,14 @@ for entry in entries:
 
 filtered.sort(
     key=lambda x: x.get("published_parsed") or datetime.min,
-    reverse=(sort_order == "newest_first")
+    reverse=(sort_order == "newest_first"),
 )
 
 for entry in filtered:
     st.subheader(entry.get("title"))
-    st.write(f"Source: {entry.get('source')}  |  Published: {entry.get('published')}")
+    st.write(
+        f"Source: {entry.get('source')}  |  Published: {entry.get('published')}"
+    )
     cols = st.columns(3)
     if cols[0].button("Copy link", key=entry.get("link")):
         pyperclip.copy(entry.get("link"))
