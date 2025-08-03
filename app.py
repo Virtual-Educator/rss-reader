@@ -87,33 +87,33 @@ filtered.sort(
 
 # Display with expanders
 for idx, e in enumerate(filtered):
-    # Title and date
     title = e.get("title", "[No title]")
     if e.get("published_parsed"):
         date_str = e["published_parsed"].strftime("%Y-%m-%d")
     else:
         date_str = e.get("published", "")[:10]
-
-    # Source URL
     feed_url = e.get("feed_url", "")
 
-    # Summary snippet
-    full_summary = e.get("summary", "")
-    length = e.get("snippet_length", 150) or 150
-    snippet = full_summary[:length]
-    suffix = "..." if len(full_summary) > length else ""
-    st.write(snippet + suffix)
+    with st.expander(f"{title} | {date_str}", expanded=False):
+        st.markdown(f"*Source: <{feed_url}>*")
 
+        # Summary snippet
+        full_summary = e.get("summary", "")
+        length = e.get("snippet_length", 150) or 150
+        snippet = full_summary[:length]
+        suffix = "..." if len(full_summary) > length else ""
+        st.write(snippet + suffix)
 
+        # Action buttons
         c1, c2, c3 = st.columns([1, 1, 1])
-        if c1.button("Link", key=f"l{idx}"):
+        if c1.button("Link", key=f"link_{idx}"):
             pyperclip.copy(e.get("link"))
             st.info("Link copied")
-        if c2.button("Cite", key=f"c{idx}"):
+        if c2.button("Cite", key=f"cite_{idx}"):
             citation = build_apa_citation(e, authors)
             pyperclip.copy(citation)
             st.info("Citation copied")
-        if c3.button("Archive", key=f"a{idx}"):
+        if c3.button("Archive", key=f"arch_{idx}"):
             add_to_archive(e.get("link"), ARCHIVE_PATH)
             st.info("Archived")
 
