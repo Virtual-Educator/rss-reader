@@ -87,19 +87,23 @@ filtered.sort(
 
 # Display with expanders
 for idx, e in enumerate(filtered):
+    # Title and date
     title = e.get("title", "[No title]")
-    date_str = (
-        e["published_parsed"].strftime("%Y-%m-%d")
-        if e.get("published_parsed")
-        else e.get("published", "")[:10]
-    )
-    feed_url = e.get("feed_url", "")
-    snippet_len = e.get("snippet_length", 150)
-    snippet = e.get("summary", "")[:snippet_len]
+    if e.get("published_parsed"):
+        date_str = e["published_parsed"].strftime("%Y-%m-%d")
+    else:
+        date_str = e.get("published", "")[:10]
 
-    with st.expander(title, expanded=False):
-        st.markdown(f"*Source: [{feed_url}]({feed_url}) | Date: {date_str}*")
-        st.write(snippet + ("…" if len(e.get("summary", "")) > snippet_len else ""))
+    # Source URL
+    feed_url = e.get("feed_url", "")
+
+    # Summary snippet
+    full_summary = e.get("summary", "")
+    length = e.get("snippet_length", 150) or 150
+    snippet = full_summary[:length]
+    suffix = "..." if len(full_summary) > length else ""
+    st.write(snippet + suffix)
+
 
         c1, c2, c3 = st.columns([1, 1, 1])
         if c1.button("Link", key=f"l{idx}"):
