@@ -1,1 +1,123 @@
-[]
+[
+  {
+    "url": "https://www.insidehighered.com/rss/news",
+    "category": "Higher Education"
+  },
+  {
+    "url": "https://www.highereddive.com/feeds/news/",
+    "category": "Higher Education"
+  },
+  {
+    "url": "https://bair.berkeley.edu/blog/feed.xml",
+    "category": "AI Research"
+  },
+  {
+    "url": "https://news.mit.edu/rss/topic/artificial-intelligence",
+    "category": "AI Research"
+  },
+  {
+    "url": "https://unite.ai/feed",
+    "category": "AI"
+  },
+  {
+    "url": "https://www.sciencenews.org/rss",
+    "category": "Science"
+  },
+  {
+    "url": "https://www.nature.com/subjects/machine-learning.rss",
+    "category": "Science/AI"
+  },
+  {
+    "url": "https://www.sciencedaily.com/rss/all.xml",
+    "category": "Science"
+  },
+  {
+    "url": "https://www.lseg.com/en/data-analytics/financial-news-service",
+    "category": "Business & Economics"
+  },
+  {
+    "url": "https://www.stlouisfed.org/rss",
+    "category": "Business & Economics"
+  },
+  {
+    "url": "https://www.theverge.com/rss/index.xml",
+    "category": "Technology"
+  },
+  {
+    "url": "https://www.theverge.com/rss/ai-artificial-i/index.xml",
+    "category": "AI & Technology"
+  },
+  {
+    "url": "https://techcrunch.com/feed/",
+    "category": "Technology"
+  },
+  {
+    "url": "https://venturebeat.com/feed/",
+    "category": "Technology"
+  },
+  {
+    "url": "https://www.zdnet.com/news/rss.xml",
+    "category": "Technology"
+  },
+  {
+    "url": "https://www.zdnet.com/topic/ai/rss.xml",
+    "category": "AI & Technology"
+  },
+  {
+    "url": "https://www.cnet.com/rss/",
+    "category": "Technology"
+  },
+  {
+    "url": "https://www.macrumors.com/macrumors.xml",
+    "category": "Technology"
+  },
+  {
+    "url": "https://feeder.co/discover/b36018dfed/variety-com",
+    "category": "Technology"
+  },
+  {
+    "url": "https://rapidapi.com/dineybomfim/api/midjourneyfeed",
+    "category": "AI & Technology"
+  },
+  {
+    "url": "https://openai.com/blog/rss",
+    "category": "AI"
+  },
+  {
+    "url": "https://runwayml.com/blog/rss",
+    "category": "AI"
+  },
+  {
+    "url": "https://lumalabs.ai/blog/news/rss",
+    "category": "AI"
+  },
+  {
+    "url": "https://meshy.statuspage.io/history.rss",
+    "category": "AI"
+  },
+  {
+    "url": "https://blog.google/feeds/latest/",
+    "category": "AI & Technology"
+  },
+  {
+    "url": "https://developers.googleblog.com/atom.xml",
+    "category": "AI & Technology"
+  },
+  {
+    "url": "https://ai.googleblog.com/feeds/posts/default?alt=rss",
+    "category": "AI & Technology"
+  },
+  {
+    "url": "https://blogs.windows.com/feed/",
+    "category": "Technology"
+  },
+  {
+    "url": "https://azure.microsoft.com/en-us/blog/feed/",
+    "category": "Technology"
+  },
+  {
+    "url": "https://devblogs.microsoft.com/visualstudio/feed/",
+    "category": "Technology"
+  }
+]
+
