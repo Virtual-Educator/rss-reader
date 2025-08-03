@@ -18,7 +18,8 @@ def fetch_and_parse_feeds(feeds, cache_dir):
                 "published_parsed": datetime(*entry.published_parsed[:6]) if entry.get("published_parsed") else None,
                 "author": entry.get("author", None),
                 "summary": entry.get("summary", ""),
-                "source": cat
+                "source": cat,
+                "feed_url": url
             }
             all_entries.append(e)
             # Cache raw entries with a safe filename
