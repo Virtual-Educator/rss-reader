@@ -3,19 +3,28 @@ import feedparser
 import pyperclip
 import os
 from datetime import datetime
+from urllib.parse import urlparse
 from utils.file_io import load_json
 from utils.rss import fetch_and_parse_feeds
 from utils.citation import build_apa_citation
 from utils.archive import is_archived, add_to_archive
 
-# ─── Page Config ─────────────────────────────────────────────────────────────
-st.set_page_config(
-    page_title="Personal News Reader",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+# apply page layout and center container
+st.set_page_config(page_title="Personal News Reader", layout="wide")
+st.markdown(
+    """
+    <style>
+      div.block-container {
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+    </style>
+    """,
+    unsafe_allow_html=True
 )
 
-# ─── Paths and Data Load ─────────────────────────────────────────────────────
+# load data
 BASE_DIR = os.path.dirname(__file__)
 FEEDS_PATH = os.path.join(BASE_DIR, "feeds.json")
 ARCHIVE_PATH = os.path.join(BASE_DIR, "read_articles.json")
@@ -24,26 +33,26 @@ CACHE_DIR = os.path.join(BASE_DIR, "cache")
 feeds = load_json(FEEDS_PATH, default=[])
 archived = load_json(ARCHIVE_PATH, default=[])
 
-# ─── Fetch & Deduplicate ──────────────────────────────────────────────────────
-with st.spinner("Loading articles…"):
-    raw = fetch_and_parse_feeds(feeds, CACHE_DIR)
+# fetch and dedupe
+with st.spinner("Loading articles..."):
+    raw_entries = fetch_and_parse_feeds(feeds, CACHE_DIR)
 
 seen, entries = set(), []
-for e in raw:
+for e in raw_entries:
     link = e.get("link")
     if link and link not in seen:
         seen.add(link)
         entries.append(e)
 
-# ─── Top Controls: Refresh & Category Filter ─────────────────────────────────
-c1, c2 = st.columns([1, 4], gap="small")
-if c1.button("🔄 Refresh"):
+# top controls
+col_refresh, col_cat = st.columns([1, 4], gap="small")
+if col_refresh.button("Refresh"):
     st.rerun()
 
 categories = sorted({e["source"] for e in entries})
-selected_cat = c2.selectbox("Category", ["All"] + categories)
+selected_cat = col_cat.selectbox("Category", ["All"] + categories)
 
-# ─── Filter & Sort ────────────────────────────────────────────────────────────
+# filter and sort
 filtered = []
 for e in entries:
     if is_archived(e["link"], archived):
@@ -57,46 +66,45 @@ filtered.sort(
     reverse=True
 )
 
-# ─── Display Articles ─────────────────────────────────────────────────────────
+# display articles
 for idx, e in enumerate(filtered):
+    link = e.get("link", "#")
     title = e.get("title", "[No title]")
-    # Date
+    # hyperlink title
+    st.markdown(f"### [{title}]({link})")
+
+    # date and domain
     if e.get("published_parsed"):
         date_str = e["published_parsed"].strftime("%Y-%m-%d")
     else:
         date_str = e.get("published", "")[:10]
-    # Source URL
-    feed_url = e.get("feed_url", "")
+    domain = urlparse(link).netloc
+    st.markdown(f"*Source: {domain} | Date: {date_str}*")
 
-    left, right = st.columns((4, 1), gap="small")
+    # snippet
+    full = e.get("summary", "")
+    snippet = full[:250]
+    suffix = "..." if len(full) > 250 else ""
+    st.write(snippet + suffix)
 
-    # Left: headline, meta, snippet
-    with left:
-        st.subheader(title)
-        st.markdown(f"*Source: <{feed_url}>  |  Date: {date_str}*")
-        full = e.get("summary", "")
-        snippet = full[:250]
-        more = "..." if len(full) > 250 else ""
-        st.write(snippet + more)
-
-    # Right: actions dropdown
-    with right:
-        action = st.selectbox(
-            "Actions",
-            ["—", "Copy link", "Copy citation", "Print view", "Archive"],
-            key=f"act_{idx}"
-        )
-        if action == "Copy link":
-            pyperclip.copy(e.get("link"))
-            st.info("Link copied")
-        elif action == "Copy citation":
-            cit = build_apa_citation(e, {})
-            pyperclip.copy(cit)
-            st.info("Citation copied")
-        elif action == "Print view":
-            st.markdown(f"[Open printable article]({e.get('link')})")
-        elif action == "Archive":
-            add_to_archive(e.get("link"), ARCHIVE_PATH)
-            st.info("Archived")
+    # smaller actions dropdown
+    action = st.selectbox(
+        "",
+        [" ", "Copy link", "Copy citation", "Print view", "Archive"],
+        key=f"act_{idx}",
+        label_visibility="collapsed"
+    )
+    if action == "Copy link":
+        pyperclip.copy(link)
+        st.info("Link copied")
+    elif action == "Copy citation":
+        citation = build_apa_citation(e, {})
+        pyperclip.copy(citation)
+        st.info("Citation copied")
+    elif action == "Print view":
+        st.markdown(f"[Open article]({link})")
+    elif action == "Archive":
+        add_to_archive(link, ARCHIVE_PATH)
+        st.info("Archived")
 
 st.caption("Powered by your local RSS reader")
