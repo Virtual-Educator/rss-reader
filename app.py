@@ -14,7 +14,7 @@ st.set_page_config(page_title="Personal News Reader", layout="wide", initial_sid
 st.markdown("""
 <style>
   /* Center container and remove link underlines */
-  div.block-container { max-width: 700px; margin-left: auto; margin-right: auto; }
+  div.block-container { max-width: 1200px; margin-left: auto; margin-right: auto; }
   a { text-decoration: none !important; }
   /* Card styles */
   .card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 16px; background-color: #f9f9f9; }
