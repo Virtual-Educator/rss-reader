@@ -15,7 +15,7 @@ st.markdown(
     """
     <style>
       div.block-container {
-        max-width: 700px;
+        max-width: 1200px;
         margin-left: auto;
         margin-right: auto;
       }
