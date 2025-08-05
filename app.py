@@ -19,6 +19,9 @@ st.markdown(
         margin-left: auto;
         margin-right: auto;
       }
+      a {
+        text-decoration: none !important;
+      }
     </style>
     """,
     unsafe_allow_html=True
@@ -70,41 +73,47 @@ filtered.sort(
 for idx, e in enumerate(filtered):
     link = e.get("link", "#")
     title = e.get("title", "[No title]")
-    # hyperlink title
-    st.markdown(f"### [{title}]({link})")
 
-    # date and domain
+    # Parse date and source domain
     if e.get("published_parsed"):
         date_str = e["published_parsed"].strftime("%Y-%m-%d")
     else:
         date_str = e.get("published", "")[:10]
     domain = urlparse(link).netloc
-    st.markdown(f"*Source: {domain} | Date: {date_str}*")
 
-    # snippet
-    full = e.get("summary", "")
-    snippet = full[:250]
-    suffix = "..." if len(full) > 250 else ""
-    st.write(snippet + suffix)
+    # Create three columns: Title/Meta, Snippet, Actions
+    col1, col2, col3 = st.columns([3, 5, 2], gap="small")
 
-    # smaller actions dropdown
-    action = st.selectbox(
-        "",
-        [" ", "Copy link", "Copy citation", "Print view", "Archive"],
-        key=f"act_{idx}",
-        label_visibility="collapsed"
-    )
-    if action == "Copy link":
-        pyperclip.copy(link)
-        st.info("Link copied")
-    elif action == "Copy citation":
-        citation = build_apa_citation(e, {})
-        pyperclip.copy(citation)
-        st.info("Citation copied")
-    elif action == "Print view":
-        st.markdown(f"[Open article]({link})")
-    elif action == "Archive":
-        add_to_archive(link, ARCHIVE_PATH)
-        st.info("Archived")
+    with col1:
+        # Hyperlinked title without underline
+        st.markdown(f'<a href="{link}" style="font-size:1.25rem;">{title}</a>', unsafe_allow_html=True)
+        st.markdown(f'*{domain} • {date_str}*')
+
+    with col2:
+        full = e.get("summary", "")
+        length = e.get("snippet_length", 250) or 250
+        snippet = full[:length]
+        suffix = "..." if len(full) > length else ""
+        st.write(snippet + suffix)
+
+    with col3:
+        action = st.selectbox(
+            "",
+            [" ", "Copy link", "Copy citation", "Print view", "Archive"],
+            key=f"act_{idx}",
+            label_visibility="collapsed"
+        )
+        if action == "Copy link":
+            pyperclip.copy(link)
+            st.info("Link copied")
+        elif action == "Copy citation":
+            cit = build_apa_citation(e, authors)
+            pyperclip.copy(cit)
+            st.info("Citation copied")
+        elif action == "Print view":
+            st.markdown(f'[Print]({link})')
+        elif action == "Archive":
+            add_to_archive(link, ARCHIVE_PATH)
+            st.info("Archived")
 
 st.caption("Powered by your local RSS reader")
