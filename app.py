@@ -17,18 +17,13 @@ st.markdown(
     """
 <style>
   /* centered content */
-  div.block-container { max-width: 1200px; margin-left: auto; margin-right: auto; }
+  div.block-container { max-width: 1900px; margin-left: auto; margin-right: auto; }
 
   /* links without underline */
   a { text-decoration: none !important; }
 
   /* category panel */
-  .cat-card {
-    border: 1px solid #2f2f2f;
-    border-radius: 16px;
-    padding: 12px;
-    background: transparent;
-  }
+
   .cat-header {
     display: flex;
     align-items: center;
@@ -39,14 +34,7 @@ st.markdown(
   }
   .cat-header a { color: inherit; }
 
-  /* item card */
-  .gn-card {
-    border: 1px solid #2f2f2f;
-    border-radius: 16px;
-    padding: 14px;
-    background: transparent;
-    margin: 10px 0;
-  }
+
 
   /* top line inside card */
   .gn-header { display: flex; align-items: center; justify-content: space-between; }
