@@ -1,77 +1,91 @@
 import os
 from datetime import datetime
 from urllib.parse import urlparse, quote
-from bs4 import BeautifulSoup
 
 import streamlit as st
 import pyperclip
+from bs4 import BeautifulSoup
 
 from utils.file_io import load_json
 from utils.rss import fetch_and_parse_feeds
 from utils.citation import build_apa_citation
-from utils.archive import (
-    get_archived, is_archived, add_to_archive, remove_from_archive
-)
+from utils.archive import get_archived, is_archived, add_to_archive, remove_from_archive
 
 # Page config and CSS
-st.set_page_config(
-    page_title="Personal News Reader",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
+st.set_page_config(page_title="Personal News Reader", layout="wide", initial_sidebar_state="collapsed")
 st.markdown(
     """
 <style>
-  /* Center content like a timeline */
-  div.block-container { max-width: 1900px; margin-left:auto; margin-right:auto; }
+  /* centered content */
+  div.block-container { max-width: 1200px; margin-left: auto; margin-right: auto; }
 
-  /* Links without underline */
+  /* links without underline */
   a { text-decoration: none !important; }
 
-  /* Category column container */
-  /**
+  /* category panel */
   .cat-card {
     border: 1px solid #2f2f2f;
     border-radius: 16px;
     padding: 12px;
     background: transparent;
   }
-  **/
-
   .cat-header {
-    display:flex; align-items:center; justify-content:space-between;
-    font-size:1.05rem; font-weight:700; margin: 4px 2px 8px 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 4px 2px 8px 2px;
   }
   .cat-header a { color: inherit; }
 
-  /* Item row: left text, right thumbnail */
-  .news-row {
-    display:grid;
-    grid-template-columns: 1fr 96px;
-    gap: 12px;
-    align-items:start;
-    padding: 8px 0;
-  }
-  .news-divider { height:1px; background:#2b2b2b; margin: 6px 0 4px 0; }
-
-  .source-line { color:#9aa0a6; font-size:0.85rem; margin:0 0 2px 0; }
-  .title a { color:inherit; font-weight:700; font-size:1.0rem; line-height:1.25; }
-  .snippet { color:#e8eaed; font-size:0.93rem; margin-top:6px; }
-
-  .thumb {
-    width:96px; height:96px; object-fit:cover; border-radius:12px; background:#222;
+  /* item card */
+  .gn-card {
+    border: 1px solid #2f2f2f;
+    border-radius: 16px;
+    padding: 14px;
+    background: transparent;
+    margin: 10px 0;
   }
 
-  /* Small icon row on the right end of the text block */
-  .iconrow { display:flex; gap:8px; margin-top:6px; }
-  .iconbtn {
-    border:1px solid #3a3a3a; border-radius:10px;
-    padding:2px 6px; font-size:14px; min-width:30px; min-height:30px;
-    background:transparent; cursor:pointer;
-  }
-  .iconbtn:hover { background:#262626; }
+  /* top line inside card */
+  .gn-header { display: flex; align-items: center; justify-content: space-between; }
+  .gn-meta { color: #9aa0a6; font-size: 0.85rem; }
 
-  .topbar { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  /* small icon buttons in header, top-right */
+  .gn-actions { display: flex; gap: 8px; }
+  .gn-actions button[role="button"] {
+    padding: 4px 6px !important;
+    font-size: 16px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    border: 1px solid #3a3a3a !important;
+    border-radius: 10px !important;
+    background: transparent !important;
+  }
+
+  /* content row: text left, thumbnail right */
+  .gn-row {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 14px;
+    align-items: start;
+    margin-top: 8px;
+  }
+  .gn-title a { color: inherit; font-weight: 700; font-size: 1.05rem; line-height: 1.25; }
+  .gn-snippet { color: #e8eaed; font-size: 0.95rem; margin-top: 6px; }
+
+  .gn-thumb {
+    width: 200px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 14px;
+    background: #222;
+  }
+
+  .news-divider { height: 1px; background: #2b2b2b; margin: 6px 0 4px 0; }
+
+  .topbar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
 </style>
 """,
     unsafe_allow_html=True,
@@ -80,12 +94,12 @@ st.markdown(
 # Paths
 BASE_DIR = os.path.dirname(__file__)
 FEEDS_PATH = os.path.join(BASE_DIR, "feeds.json")
-ARCHIVE_PATH = os.path.join(BASE_DIR, "read_articles.json")  # we will store objects here
+ARCHIVE_PATH = os.path.join(BASE_DIR, "read_articles.json")
 CACHE_DIR = os.path.join(BASE_DIR, "cache")
 
-# Load feeds and archived list
+# Load configuration and archive
 feeds = load_json(FEEDS_PATH, default=[])
-archived_items = get_archived(ARCHIVE_PATH)  # list of dicts
+archived_items = get_archived(ARCHIVE_PATH)  # list of dicts or empty
 
 def domain_of(url: str) -> str:
     try:
@@ -93,144 +107,152 @@ def domain_of(url: str) -> str:
     except Exception:
         return ""
 
-def first_img_from_summary(summary_html: str) -> str | None:
-    if not summary_html:
-        return None
-    soup = BeautifulSoup(summary_html, "html.parser")
-    tag = soup.find("img")
-    return tag.get("src") if tag and tag.get("src") else None
-
 def plain_text(html: str) -> str:
     return BeautifulSoup(html or "", "html.parser").get_text(" ", strip=True)
 
-def render_item(e: dict, idx_key: str, archived_view: bool = False):
-    link = e.get("link", "#")
-    title = e.get("title", "[No title]")
+def thumbnail_for(entry: dict) -> str:
+    thumb = entry.get("thumbnail")
+    if not thumb:
+        soup = BeautifulSoup(entry.get("summary", ""), "html.parser")
+        img = soup.find("img")
+        if img and img.get("src"):
+            thumb = img["src"]
+    if not thumb:
+        thumb = f"https://www.google.com/s2/favicons?sz=128&domain={domain_of(entry.get('link',''))}"
+    return thumb
 
-    # meta: date and author
-    date_str = (
-        e["published_parsed"].strftime("%Y-%m-%d")
-        if e.get("published_parsed")
-        else e.get("published", "")[:10]
-    )
+def render_item(entry: dict, idx_key: str, archived_view: bool = False):
+    link = entry.get("link", "#")
+    title = entry.get("title", "[No title]")
+    date_str = entry["published_parsed"].strftime("%Y-%m-%d") if entry.get("published_parsed") else entry.get("published", "")[:10]
     src = domain_of(link)
-    author = e.get("author")
+    author = entry.get("author")
     byline = f" • By {author}" if author else ""
-
-    # thumbnail
-    thumb = e.get("thumbnail") or first_img_from_summary(e.get("summary", "")) \
-            or f"https://www.google.com/s2/favicons?sz=128&domain={src}"
-
-    # snippet
-    text = plain_text(e.get("summary", ""))
-    length = e.get("snippet_length", 250) or 250
+    text = plain_text(entry.get("summary", ""))
+    length = entry.get("snippet_length", 250) or 250
     snippet = text[:length] + ("..." if len(text) > length else "")
+    thumb = thumbnail_for(entry)
 
-    # row with right-aligned thumbnail
-    st.markdown('<div class="news-row">', unsafe_allow_html=True)
-    st.markdown(f'<img class="thumb" src="{thumb}"/>', unsafe_allow_html=True)
-    st.markdown(
-        f"""
-        <div>
-          <div class="source-line">{src} • {date_str}{byline}</div>
-          <div class="title"><a href="{link}" target="_blank">{title}</a></div>
-          <div class="snippet">{snippet}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    
+    # Card wrapper
+    st.markdown('<div class="gn-card">', unsafe_allow_html=True)
+
+    # Header with meta on left and two icons on right
+    col_meta, col_icons = st.columns([8, 2], gap="small")
+    with col_meta:
+        st.markdown(f'<div class="gn-header"><div class="gn-meta">{src} • {date_str}{byline}</div></div>', unsafe_allow_html=True)
+    with col_icons:
+        st.markdown('<div class="gn-actions">', unsafe_allow_html=True)
+        b1, b2 = st.columns([1, 1], gap="small")
+        if b1.button("📋", key=f"cit_{idx_key}", help="Copy APA citation"):
+            citation = build_apa_citation(entry, {})
+            pyperclip.copy(citation)
+            st.info("Citation copied")
+        if not archived_view:
+            if b2.button("📂", key=f"arc_{idx_key}", help="Archive"):
+                add_to_archive(
+                    {
+                        "link": link,
+                        "title": title,
+                        "published": date_str,
+                        "author": author,
+                        "source": src,
+                        "summary": text,
+                        "thumbnail": thumb,
+                    },
+                    ARCHIVE_PATH,
+                )
+                st.info("Archived")
+        else:
+            if b2.button("🗑", key=f"unarc_{idx_key}", help="Remove from archive"):
+                remove_from_archive(link, ARCHIVE_PATH)
+                st.info("Removed from archive")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # Content row
+    st.markdown('<div class="gn-row">', unsafe_allow_html=True)
+    with st.container():
+        st.markdown(f'<div class="gn-title"><a href="{link}" target="_blank">{title}</a></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="gn-snippet">{snippet}</div>', unsafe_allow_html=True)
+    st.markdown(f'<img class="gn-thumb" src="{thumb}" />', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # The only two actions you asked for
-    c1, c2, _ = st.columns([1, 1, 10], gap="small")
-    if c1.button("📋", key=f"cit_{idx_key}", help="Copy APA citation"):
-        citation = build_apa_citation(e, {})
-        pyperclip.copy(citation)
-        st.info("Citation copied")
-    if not archived_view:
-        if c2.button("📂", key=f"arc_{idx_key}", help="Archive"):
-            add_to_archive(
-                {
-                    "link": link,
-                    "title": title,
-                    "published": date_str,
-                    "author": author,
-                    "source": src,
-                    "summary": text,
-                    "thumbnail": thumb,
-                },
-                ARCHIVE_PATH,
-            )
-            st.info("Archived")
-    else:
-        if c2.button("🗑", key=f"unarc_{idx_key}", help="Remove from archive"):
-            remove_from_archive(link, ARCHIVE_PATH)
-            st.info("Removed from archive")
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# Simple router
+# Router
 view = st.query_params.get("view", "home")
 cat_param = st.query_params.get("cat")
 
 # Top bar
 st.markdown('<div class="topbar">', unsafe_allow_html=True)
-col1, col2, col3 = st.columns([1, 1, 1], gap="small")
-if col1.button("Refresh"):
+tb1, tb2, tb3 = st.columns([1, 1, 1], gap="small")
+if tb1.button("Refresh"):
     st.rerun()
-if col2.button("Home"):
+if tb2.button("Home"):
     st.query_params.clear()
     st.rerun()
-if col3.button("Archived"):
+if tb3.button("Archived"):
     st.query_params.update({"view": "arch"})
     st.rerun()
 st.markdown("</div>", unsafe_allow_html=True)
 
+# Archived page
 if view == "arch":
     st.header("Archived")
     items = archived_items
     if not items:
         st.write("No archived items yet.")
-    else:
-        # three columns of archived cards
-        for start in range(0, len(items), 3):
-            cols = st.columns(3, gap="large")
-            for i, a in enumerate(items[start : start + 3]):
-                with cols[i]:
-                    render_item(a, f"arch_{start+i}", archived_view=True)
-                    if i < 2 and (start + i) < len(items) - 1:
-                        st.markdown('<div class="news-divider"></div>', unsafe_allow_html=True)
+        st.stop()
+    for start in range(0, len(items), 3):
+        cols = st.columns(3, gap="large")
+        for i, a in enumerate(items[start:start + 3]):
+            with cols[i]:
+                render_item(a, f"arch_{start+i}", archived_view=True)
+                if i < 2 and (start + i) < len(items) - 1:
+                    st.markdown('<div class="news-divider"></div>', unsafe_allow_html=True)
     st.stop()
 
-# Home dashboard
+# Fetch current stories for home and category pages
 with st.spinner("Loading articles…"):
     entries = fetch_and_parse_feeds(feeds, CACHE_DIR)
 
 # Deduplicate by link
-seen = set()
+seen_links = set()
 deduped = []
 for e in entries:
     link = e.get("link")
-    if link and link not in seen:
-        seen.add(link)
+    if link and link not in seen_links:
+        seen_links.add(link)
         deduped.append(e)
 
-# Group by category and sort
+# Group by category and sort by recency
 by_cat = {}
 for e in deduped:
     if is_archived(e.get("link", ""), archived_items):
         continue
     cat = e.get("source", "Other")
     by_cat.setdefault(cat, []).append(e)
-
 for cat in by_cat:
     by_cat[cat].sort(key=lambda x: x.get("published_parsed") or datetime.min, reverse=True)
 
-# Three category columns
+# Category page
+if view == "cat" and cat_param:
+    st.header(cat_param)
+    items = by_cat.get(cat_param, [])
+    if not items:
+        st.write("No stories found.")
+        st.stop()
+    for idx, e in enumerate(items):
+        render_item(e, f"cat_{idx}")
+        if idx < len(items) - 1:
+            st.markdown('<div class="news-divider"></div>', unsafe_allow_html=True)
+    st.stop()
+
+# Home dashboard with three category columns
 cats = sorted(by_cat.keys())
 cols = st.columns(3, gap="large")
 for i, cat in enumerate(cats):
-    col = cols[i % 3]
-    with col:
+    column = cols[i % 3]
+    with column:
         st.markdown('<div class="cat-card">', unsafe_allow_html=True)
         href = f"?view=cat&cat={quote(cat)}"
         st.markdown(f'<div class="cat-header"><a href="{href}">{cat} ›</a></div>', unsafe_allow_html=True)
@@ -241,15 +263,3 @@ for i, cat in enumerate(cats):
                 st.markdown('<div class="news-divider"></div>', unsafe_allow_html=True)
 
         st.markdown("</div>", unsafe_allow_html=True)
-
-# Category detail page
-if view == "cat" and cat_param:
-    st.header(cat_param)
-    items = by_cat.get(cat_param, [])
-    if not items:
-        st.write("No stories found.")
-    else:
-        for idx, e in enumerate(items):
-            render_item(e, f"cat_{idx}")
-            if idx < len(items) - 1:
-                st.markdown('<div class="news-divider"></div>', unsafe_allow_html=True)
