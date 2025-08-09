@@ -223,21 +223,6 @@ def parse_feed(url: str, limit: int | None = None):
 
 def ensure_default_config():
     default_feeds = {
-        "Health": [
-            "https://www.statnews.com/feed/",
-            "https://www.medicalnewstoday.com/rss",
-            "https://www.sciencedaily.com/rss/health_medicine.xml",
-        ],
-        "Gaming": [
-            "https://www.gamespot.com/feeds/mashup/",
-            "https://www.eurogamer.net/feed/news",
-            "https://www.pcgamer.com/rss/",
-        ],
-        "Higher education": [
-            "https://www.highereddive.com/feeds/news/",
-            "https://hechingerreport.org/feed/",
-            "https://www.insidehighered.com/rss/news",
-        ],
         "World News": [
             "https://feeds.bbci.co.uk/news/world/rss.xml",
             "https://feeds.npr.org/1004/rss.xml",
@@ -253,6 +238,21 @@ def ensure_default_config():
             "https://techcrunch.com/tag/artificial-intelligence/feed/",
             "https://www.technologyreview.com/feed/",
             "https://www.theverge.com/ai-artificial-intelligence/rss",
+        ],
+        "Health": [
+            "https://www.statnews.com/feed/",
+            "https://www.medicalnewstoday.com/rss",
+            "https://www.sciencedaily.com/rss/health_medicine.xml",
+        ],
+        "Gaming": [
+            "https://www.gamespot.com/feeds/mashup/",
+            "https://www.eurogamer.net/feed/news",
+            "https://www.pcgamer.com/rss/",
+        ],
+        "Higher education": [
+            "https://www.highereddive.com/feeds/news/",
+            "https://hechingerreport.org/feed/",
+            "https://www.insidehighered.com/rss/news",
         ],
     }
     if "feeds" not in st.session_state:
@@ -304,7 +304,7 @@ st.markdown(
     .stButton > button:hover { background: rgba(255,255,255,0.07) !important; }
 
     /* card title size */
-    .card-title { font-size: 1.35rem; font-weight: 800; line-height: 1.25; margin-bottom: 0.25rem; }
+    .card-title { font-size: 1.35rem; font-weight: 600; line-height: 1.25; margin-bottom: 0.50rem; }
     </style>
     ''',
     unsafe_allow_html=True,
@@ -321,7 +321,7 @@ with st.sidebar:
 
     st.caption("Edit feeds below. One feed per line.")
 
-    for cat in ["Health", "Gaming", "Higher education", "World News", "AI in Higher Education", "AI in Business"]:
+    for cat in ["World News", "AI in Higher Education", "AI in Business", "Health", "Gaming", "Higher Education"]:
         with st.expander(f"{cat} feeds"):
             txt = st.text_area(cat, "\n".join(st.session_state["feeds"].get(cat, [])), height=120, key=f"{cat}_feeds")
             st.session_state["feeds"][cat] = [l.strip() for l in txt.splitlines() if l.strip()]
