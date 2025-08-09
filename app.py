@@ -23,18 +23,20 @@ st.markdown(
     """
 <style>
   /* Center content like a timeline */
-  div.block-container { max-width: 1200px; margin-left:auto; margin-right:auto; }
+  div.block-container { max-width: 1900px; margin-left:auto; margin-right:auto; }
 
   /* Links without underline */
   a { text-decoration: none !important; }
 
   /* Category column container */
+  /**
   .cat-card {
     border: 1px solid #2f2f2f;
     border-radius: 16px;
     padding: 12px;
     background: transparent;
   }
+  **/
 
   .cat-header {
     display:flex; align-items:center; justify-content:space-between;
@@ -126,6 +128,7 @@ def render_item(e: dict, idx_key: str, archived_view: bool = False):
 
     # row with right-aligned thumbnail
     st.markdown('<div class="news-row">', unsafe_allow_html=True)
+    st.markdown(f'<img class="thumb" src="{thumb}"/>', unsafe_allow_html=True)
     st.markdown(
         f"""
         <div>
@@ -136,7 +139,7 @@ def render_item(e: dict, idx_key: str, archived_view: bool = False):
         """,
         unsafe_allow_html=True,
     )
-    st.markdown(f'<img class="thumb" src="{thumb}"/>', unsafe_allow_html=True)
+    
     st.markdown("</div>", unsafe_allow_html=True)
 
     # The only two actions you asked for
