@@ -377,7 +377,7 @@ with st.sidebar:
 
     with st.expander("Higher education feeds"):
 
-        txt = st.text_area("Higher education", "".join(st.session_state["feeds"].get("Higher education", [])), height=120, key="highered_feeds")
+        txt = st.text_area("Higher education", "\n".join(st.session_state["feeds"].get("Higher education", [])), height=120, key="highered_feeds")
 
         st.session_state["feeds"]["Higher education"] = [l.strip() for l in txt.splitlines() if l.strip()]
 
@@ -385,7 +385,7 @@ with st.sidebar:
 
     with st.expander("World News feeds"):
 
-        txt = st.text_area("World News", "".join(st.session_state["feeds"].get("World News", [])), height=120, key="world_feeds")
+        txt = st.text_area("World News", "\n".join(st.session_state["feeds"].get("World News", [])), height=120, key="world_feeds")
 
         st.session_state["feeds"]["World News"] = [l.strip() for l in txt.splitlines() if l.strip()]
 
@@ -393,7 +393,7 @@ with st.sidebar:
 
     with st.expander("AI in Higher Education feeds"):
 
-        txt = st.text_area("AI in Higher Education", "".join(st.session_state["feeds"].get("AI in Higher Education", [])), height=120, key="ai_he_feeds")
+        txt = st.text_area("AI in Higher Education", "\n".join(st.session_state["feeds"].get("AI in Higher Education", [])), height=120, key="ai_he_feeds")
 
         st.session_state["feeds"]["AI in Higher Education"] = [l.strip() for l in txt.splitlines() if l.strip()]
 
@@ -401,7 +401,7 @@ with st.sidebar:
 
     with st.expander("AI in Business feeds"):
 
-        txt = st.text_area("AI in Business", "".join(st.session_state["feeds"].get("AI in Business", [])), height=120, key="ai_biz_feeds")
+        txt = st.text_area("AI in Business", "\n".join(st.session_state["feeds"].get("AI in Business", [])), height=120, key="ai_biz_feeds")
 
         st.session_state["feeds"]["AI in Business"] = [l.strip() for l in txt.splitlines() if l.strip()]
 
