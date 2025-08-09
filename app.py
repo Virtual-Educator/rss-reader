@@ -67,8 +67,7 @@ def human_time_ago(dt_obj):
     return f"{years} year{'s' if years != 1 else ''} ago"
 
 def try_parse_datetime(entry):
-    fields = ["published_parsed", "updated_parsed", "created_parsed"]
-    for f in fields:
+    for f in ["published_parsed", "updated_parsed", "created_parsed"]:
         tm_struct = entry.get(f)
         if tm_struct:
             try:
@@ -118,34 +117,27 @@ def format_author_for_apa(name: str) -> str:
         return ""
     last = parts[-1]
     initials = [p[0].upper() + "." for p in parts[:-1] if p]
-    if initials:
-        return f"{last}, {' '.join(initials)}"
-    return last
+    return f"{last}, {' '.join(initials)}" if initials else last
 
 def make_apa_citation(item: dict) -> str:
     authors = item.get("authors", [])
-    author_field = ""
     if authors:
         names = [format_author_for_apa(a) for a in authors if a]
         if len(names) == 1:
             author_field = names[0]
         elif len(names) == 2:
             author_field = f"{names[0]} & {names[1]}"
-        elif len(names) > 2:
+        else:
             author_field = ", ".join(names[:-1]) + f", & {names[-1]}"
     else:
         author_field = item.get("site", "")
     pub_dt = item.get("published_dt")
-    if pub_dt:
-        month_name = pub_dt.strftime("%B")
-        date_str = f"{pub_dt.year}, {month_name} {pub_dt.day}"
-    else:
-        date_str = dt.datetime.now().strftime("%Y")
+    date_str = f"{pub_dt.year}, {pub_dt.strftime('%B')} {pub_dt.day}" if pub_dt else dt.datetime.now().strftime("%Y")
     title = item.get("title", "").strip()
-    site = item.get("site", "").strip()
-    url = item.get("link", "").strip()
     if title:
         title = title[:1].upper() + title[1:]
+    site = item.get("site", "").strip()
+    url = item.get("link", "").strip()
     return f"{author_field} ({date_str}). {title}. {site}. {url}"
 
 def load_archive():
@@ -171,8 +163,7 @@ def add_to_archive(item):
         save_archive(items)
 
 def remove_from_archive(link: str):
-    items = [x for x in load_archive() if x.get("link") != link]
-    save_archive(items)
+    save_archive([x for x in load_archive() if x.get("link") != link])
 
 def parse_feed(url: str, limit: int | None = None):
     if feedparser is None:
@@ -219,7 +210,6 @@ def parse_feed(url: str, limit: int | None = None):
     return items
 
 def ensure_default_config():
-    # Order is intentional and preserved
     default_feeds = {
         "World News": [
             "https://feeds.bbci.co.uk/news/world/rss.xml",
@@ -261,6 +251,8 @@ def ensure_default_config():
                 st.session_state["feeds"][k] = v
     if "per_column" not in st.session_state:
         st.session_state["per_column"] = 5
+    if "category_order" not in st.session_state:
+        st.session_state["category_order"] = list(st.session_state["feeds"].keys())
 
 ensure_default_config()
 
@@ -271,8 +263,7 @@ st.markdown(
     <style>
     .main .block-container { max-width: 1900px; padding-top: 0.2rem; padding-bottom: 0.2rem; }
     div[data-testid="stVerticalBlock"] { gap: 0.2rem !important; }
-    div[data-testid="stHorizontalBlock"] { gap: 0.4rem !important; }
-
+    div[data-testid="stHorizontalBlock"] { gap: 0.35rem !important; }
     a, a:visited, a:hover { text-decoration: none !important; }
 
     .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 0 0 12px 0; }
@@ -283,20 +274,26 @@ st.markdown(
     }
     .nav-grid a.active { border-color: rgba(99,102,241,0.6); box-shadow: 0 0 0 2px rgba(99,102,241,0.25) inset; }
 
+    /* tiny, borderless icon buttons */
     .stButton > button {
-        border: none !important;
+        border: 0 !important;
+        outline: none !important;
         background: transparent !important;
-        padding: 1px 3px !important;
-        font-size: 0.7rem !important;
+        padding: 0 2px !important;
+        font-size: 0.65rem !important;
         box-shadow: none !important;
         min-height: auto !important;
         min-width: auto !important;
         line-height: 1 !important;
+        border-radius: 0 !important;
     }
-    .stButton > button:hover { background: rgba(255,255,255,0.07) !important; }
+    .stButton > button:hover, .stButton > button:focus {
+        background: transparent !important;
+        box-shadow: none !important;
+        border-color: transparent !important;
+    }
 
     .card-title { font-size: 1.35rem; font-weight: 600; line-height: 1.25; margin-bottom: 0.6rem; }
-
     h3 { margin-top: 1.0rem !important; margin-bottom: 0.35rem !important; }
     .section-h { margin-top: 1.0rem; margin-bottom: 0.4rem; }
     </style>
@@ -313,12 +310,27 @@ with st.sidebar:
 
     st.caption("Edit feeds below. One feed per line.")
 
-    for cat in list(st.session_state["feeds"].keys()):
+    # Editable feed URLs
+    for cat in st.session_state["category_order"]:
         with st.expander(f"{cat} feeds"):
             txt = st.text_area(cat, "\n".join(st.session_state["feeds"].get(cat, [])), height=120, key=f"{cat}_feeds")
             st.session_state["feeds"][cat] = [l.strip() for l in txt.splitlines() if l.strip()]
 
-    st.caption("Archive data is stored in archive.json located next to the app.py file.")
+    # Reorder categories (one per line). Unknown names ignored; omitted names appended at end.
+    with st.expander("Category order"):
+        order_text = st.text_area(
+            "Order (one per line)",
+            value="\n".join(st.session_state["category_order"]),
+            height=150,
+            key="order_text",
+        )
+        proposed = [line.strip() for line in order_text.splitlines() if line.strip()]
+        known = list(st.session_state["feeds"].keys())
+        # Keep only known names, preserve given order, append any missing at the end
+        clean = [c for c in proposed if c in known] + [c for c in known if c not in proposed]
+        st.session_state["category_order"] = clean
+
+    st.caption("Archive data is stored in archive.json next to app.py.")
 
 # Data
 
@@ -360,15 +372,17 @@ def render_card(item: dict, key_prefix: str):
         with m3:
             st.caption(time_h)
 
-        # Final row: icons left, citation right
+        # Final row: icons left (inline), citation right
         act_col, cite_col = st.columns([0.22, 0.78])
         with act_col:
-            if st.button("📑", key=f"apa_{key_prefix}", help="APA citation"):
-                st.session_state[f"show_apa_{key_prefix}"] = not st.session_state.get(f"show_apa_{key_prefix}", False)
-            st.write("")
-            if st.button("📥", key=f"arc_{key_prefix}", help="Save to archive"):
-                add_to_archive(item)
-                st.toast("Saved to archive", icon="✅")
+            i1, i2 = st.columns([1, 1])
+            with i1:
+                if st.button("📑", key=f"apa_{key_prefix}", help="APA citation"):
+                    st.session_state[f"show_apa_{key_prefix}"] = not st.session_state.get(f"show_apa_{key_prefix}", False)
+            with i2:
+                if st.button("📥", key=f"arc_{key_prefix}", help="Save to archive"):
+                    add_to_archive(item)
+                    st.toast("Saved to archive", icon="✅")
         with cite_col:
             if st.session_state.get(f"show_apa_{key_prefix}"):
                 st.code(make_apa_citation(item))
@@ -387,11 +401,7 @@ def render_category_column(category: str, max_items: int):
 
 def render_category_page(category: str):
     st.markdown(f'<h3 class="section-h">{html.escape(category)}</h3>', unsafe_allow_html=True)
-    items = load_category_items(category)
-    if not items:
-        st.info("No items found. Add feeds in the sidebar.")
-        return
-    for i, item in enumerate(items):
+    for i, item in enumerate(load_category_items(category)):
         render_card(item, key_prefix=f"{category}_full_{i}")
 
 def render_archive_page():
@@ -419,13 +429,9 @@ params = _get_query_params()
 view = params.get("view", "home")
 name = params.get("name", "")
 
-active_map = {
-    "home": "All",
-    "archive": "Archived",
-    "category": name or "",
-}
+active_map = {"home": "All", "archive": "Archived", "category": name or ""}
 
-ordered_cats = list(st.session_state["feeds"].keys())
+ordered_cats = st.session_state["category_order"]
 nav_items = [("All", "?view=home")] + [(c, f"?view=category&name={quote(c)}") for c in ordered_cats] + [("Archived", "?view=archive")]
 nav_html = '<div class="nav-grid">' + "".join([
     f'<a class="{"active" if label == active_map.get("category", active_map.get(view,"")) else ""}" href="{href}">{label}</a>'
@@ -437,8 +443,7 @@ st.markdown(nav_html, unsafe_allow_html=True)
 
 if view == "home":
     cols = st.columns(3, gap="small")
-    cats = list(st.session_state["feeds"].keys())
-    for idx, cat in enumerate(cats):
+    for idx, cat in enumerate(ordered_cats):
         with cols[idx % 3]:
             render_category_column(cat, st.session_state["per_column"])
 elif view == "category" and name in st.session_state["feeds"]:
