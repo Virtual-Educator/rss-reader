@@ -235,30 +235,51 @@ def parse_feed(url: str, limit: int | None = None):
             break
     return items
 
+
 def ensure_default_config():
+    default_feeds = {
+        "Health": [
+            "https://www.statnews.com/feed/",
+            "https://www.medicalnewstoday.com/rss",
+            "https://www.sciencedaily.com/rss/health_medicine.xml",
+        ],
+        "Gaming": [
+            "https://www.gamespot.com/feeds/mashup/",
+            "https://www.eurogamer.net/feed/news",
+            "https://www.pcgamer.com/rss/",
+        ],
+        "Higher education": [
+            "https://www.highereddive.com/feeds/news/",
+            "https://hechingerreport.org/feed/",
+            "https://www.insidehighered.com/rss/news",
+        ],
+        "World News": [
+            "https://feeds.bbci.co.uk/news/world/rss.xml",
+            "https://feeds.npr.org/1004/rss.xml",
+            "https://www.theguardian.com/world/rss",
+        ],
+        "AI in Higher Education": [
+            "https://hechingerreport.org/special_reports/artificial-intelligence/feed/",
+            "https://www.edsurge.com/arc/feeds/articles.rss",
+            "https://er.educause.edu/rss",
+        ],
+        "AI in Business": [
+            "https://venturebeat.com/category/ai/feed/",
+            "https://techcrunch.com/tag/artificial-intelligence/feed/",
+            "https://www.technologyreview.com/feed/",
+            "https://www.theverge.com/ai-artificial-intelligence/rss",
+        ],
+    }
     if "feeds" not in st.session_state:
-        st.session_state["feeds"] = {
-            "Health": [
-                "https://www.statnews.com/feed/",
-                "https://www.medicalnewstoday.com/rss",
-                "https://www.sciencedaily.com/rss/health_medicine.xml",
-            ],
-            "Gaming": [
-                "https://www.gamespot.com/feeds/mashup/",
-                "https://www.eurogamer.net/feed/news",
-                "https://www.pcgamer.com/rss/",
-            ],
-            "Higher education": [
-                "https://www.highereddive.com/feeds/news/",
-                "https://hechingerreport.org/feed/",
-                "https://www.insidehighered.com/rss/news",
-            ],
-            "World News": [],
-            "AI in Higher Education": [],
-            "AI in Business": [],
-        }
+        st.session_state["feeds"] = default_feeds
+    else:
+        # Merge in any missing categories without overwriting existing ones
+        for k, v in default_feeds.items():
+            if k not in st.session_state["feeds"] or not isinstance(st.session_state["feeds"][k], list):
+                st.session_state["feeds"][k] = v
     if "per_column" not in st.session_state:
         st.session_state["per_column"] = 5
+
 
 ensure_default_config()
 
@@ -356,7 +377,8 @@ with st.sidebar:
 
     with st.expander("Higher education feeds"):
 
-        txt = st.text_area("Higher education", "\n".join(st.session_state["feeds"]["Higher education"]), height=120, key="highered_feeds")
+        txt = st.text_area("Higher education", "
+".join(st.session_state["feeds"].get("Higher education", [])), height=120, key="highered_feeds")
 
         st.session_state["feeds"]["Higher education"] = [l.strip() for l in txt.splitlines() if l.strip()]
 
@@ -364,7 +386,8 @@ with st.sidebar:
 
     with st.expander("World News feeds"):
 
-        txt = st.text_area("World News", "\n".join(st.session_state["feeds"]["World News"]), height=120, key="world_feeds")
+        txt = st.text_area("World News", "
+".join(st.session_state["feeds"].get("World News", [])), height=120, key="world_feeds")
 
         st.session_state["feeds"]["World News"] = [l.strip() for l in txt.splitlines() if l.strip()]
 
@@ -372,7 +395,8 @@ with st.sidebar:
 
     with st.expander("AI in Higher Education feeds"):
 
-        txt = st.text_area("AI in Higher Education", "\n".join(st.session_state["feeds"]["AI in Higher Education"]), height=120, key="ai_he_feeds")
+        txt = st.text_area("AI in Higher Education", "
+".join(st.session_state["feeds"].get("AI in Higher Education", [])), height=120, key="ai_he_feeds")
 
         st.session_state["feeds"]["AI in Higher Education"] = [l.strip() for l in txt.splitlines() if l.strip()]
 
@@ -380,7 +404,8 @@ with st.sidebar:
 
     with st.expander("AI in Business feeds"):
 
-        txt = st.text_area("AI in Business", "\n".join(st.session_state["feeds"]["AI in Business"]), height=120, key="ai_biz_feeds")
+        txt = st.text_area("AI in Business", "
+".join(st.session_state["feeds"].get("AI in Business", [])), height=120, key="ai_biz_feeds")
 
         st.session_state["feeds"]["AI in Business"] = [l.strip() for l in txt.splitlines() if l.strip()]
 
