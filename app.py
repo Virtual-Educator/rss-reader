@@ -304,7 +304,7 @@ st.markdown(
     .stButton > button:hover { background: rgba(255,255,255,0.07) !important; }
 
     /* card title size */
-    .card-title { font-size: 1.35rem; font-weight: 600; line-height: 1.25; margin-bottom: 0.50rem; }
+    .card-title { font-size: 1.35rem; font-weight: 600; line-height: 1.25; margin-bottom: 0.80rem; }
     </style>
     ''',
     unsafe_allow_html=True,
@@ -443,12 +443,12 @@ active_map = {
 
 nav_items = [
     ("All", "?view=home"),
-    ("Health", f"?view=category&name={quote('Health')}"),
-    ("Gaming", f"?view=category&name={quote('Gaming')}"),
-    ("Higher education", f"?view=category&name={quote('Higher education')}"),
     ("World News", f"?view=category&name={quote('World News')}"),
     ("AI in Higher Education", f"?view=category&name={quote('AI in Higher Education')}"),
     ("AI in Business", f"?view=category&name={quote('AI in Business')}"),
+    ("Higher education", f"?view=category&name={quote('Higher education')}"),
+    ("Health", f"?view=category&name={quote('Health')}"),
+    ("Gaming", f"?view=category&name={quote('Gaming')}"),
     ("Archived", "?view=archive"),
 ]
 nav_html = '<div class="nav-grid">' + "".join([
