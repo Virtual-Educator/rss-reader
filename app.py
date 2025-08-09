@@ -294,8 +294,8 @@ st.markdown(
     .stButton > button {
         border: none !important;
         background: transparent !important;
-        padding: 0px 0px !important;
-        font-size: 1.15rem !important;
+        padding: 2px 4px !important;
+        font-size: .75rem !important;
         box-shadow: none !important;
         min-height: auto !important;
         min-width: auto !important;
