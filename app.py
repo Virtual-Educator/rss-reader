@@ -43,13 +43,7 @@ st.markdown(
   /* small icon buttons in header, top-right */
   .gn-actions { display: flex; gap: 8px; }
   .gn-actions button[role="button"] {
-    padding: 4px 6px !important;
-    font-size: 16px !important;
-    min-width: 32px !important;
-    min-height: 32px !important;
-    border: 1px solid #3a3a3a !important;
-    border-radius: 10px !important;
-    background: transparent !important;
+    font-size: 10px !important;
   }
 
   /* content row: text left, thumbnail right */
