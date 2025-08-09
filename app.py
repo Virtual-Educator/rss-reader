@@ -18,8 +18,6 @@ APP_TITLE = "Newsboard RSS"
 ARCHIVE_PATH = "archive.json"
 
 st.set_page_config(page_title=APP_TITLE, layout="wide", page_icon="📰")
-APP_VERSION = "v4-polish"
-st.caption(f"Loaded {APP_VERSION} · {__file__}")
 
 # -----------------------------
 # Utilities
@@ -275,21 +273,38 @@ ensure_default_config()
 st.markdown(
     '''
     <style>
-    /* Global links without underline */
-    a, a:visited { text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    /* Icon-only buttons */
+    /* cap content width and tighten vertical rhythm */
+    .main .block-container { max-width: 1900px; padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    div[data-testid="stVerticalBlock"] { gap: 0.25rem !important; }
+    div[data-testid="stHorizontalBlock"] { gap: 0.5rem !important; }
+
+    /* link styling: never underline */
+    a, a:visited, a:hover { text-decoration: none !important; }
+
+    /* nav buttons */
+    .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 0 0 8px 0; }
+    .nav-grid a {
+        display: block; text-align: center; padding: 8px 12px; border-radius: 999px;
+        border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
+        font-weight: 600;
+    }
+    .nav-grid a.active { border-color: rgba(99,102,241,0.6); box-shadow: 0 0 0 2px rgba(99,102,241,0.25) inset; }
+
+    /* icon-only buttons look light */
     .stButton > button {
         border: none !important;
         background: transparent !important;
-        padding: 4px 6px !important;
-        font-size: 1.1rem !important;
+        padding: 2px 4px !important;
+        font-size: 1.15rem !important;
         box-shadow: none !important;
         min-height: auto !important;
         min-width: auto !important;
         line-height: 1 !important;
     }
     .stButton > button:hover { background: rgba(255,255,255,0.07) !important; }
+
+    /* card title size */
+    .card-title { font-size: 1.35rem; font-weight: 800; line-height: 1.25; margin-bottom: 0.25rem; }
     </style>
     ''',
     unsafe_allow_html=True,
@@ -331,21 +346,21 @@ def load_category_items(category: str, per_feed: int = 20):
 
 def render_card(item: dict, key_prefix: str):
     with st.container(border=True):
-        left, right = st.columns([1.0, 0.33], gap="medium")
+        left, right = st.columns([1.0, 0.36], gap="small")
         with left:
-            title = item.get("title", "")
-            link = item.get("link", "")
+            title = html.escape(item.get("title", ""))
+            link = html.escape(item.get("link", ""))
             summary = item.get("summary", "")
-            st.markdown(f"[{title}]({link})")
+            st.markdown(f'<div class="card-title"><a href="{link}" target="_blank">{title}</a></div>', unsafe_allow_html=True)
             if summary:
                 st.write(summary)
         with right:
             img = item.get("image")
             if img:
-                st.image(img, width=110)
+                st.image(img, width=170)  # larger thumbnail
 
         # Bottom-right action icons
-        spacer, colA, colB = st.columns([0.75, 0.125, 0.125])
+        spacer, colA, colB = st.columns([0.78, 0.11, 0.11])
         with colA:
             if st.button("📑", key=f"apa_{key_prefix}", help="APA citation"):
                 st.session_state[f"show_apa_{key_prefix}"] = not st.session_state.get(f"show_apa_{key_prefix}", False)
@@ -410,7 +425,6 @@ def render_archive_page():
                 remove_from_archive(item.get("link", ""))
                 st.experimental_rerun()
 
-
 # -----------------------------
 # Header and nav
 # -----------------------------
@@ -421,7 +435,12 @@ params = _get_query_params()
 view = params.get("view", "home")
 name = params.get("name", "")
 
-# Build chip-like nav using encoded links
+active_map = {
+    "home": "All",
+    "archive": "Archived",
+    "category": name or "",
+}
+
 nav_items = [
     ("All", "?view=home"),
     ("Health", f"?view=category&name={quote('Health')}"),
@@ -432,14 +451,18 @@ nav_items = [
     ("AI in Business", f"?view=category&name={quote('AI in Business')}"),
     ("Archived", "?view=archive"),
 ]
-links_html = " ".join([f'<a href="{href}">{label}</a>' for label, href in nav_items])
-st.markdown(links_html, unsafe_allow_html=True)
+nav_html = '<div class="nav-grid">' + "".join([
+    f'<a class="{"active" if label == active_map.get("category", active_map.get(view,"")) else ""}" href="{href}">{label}</a>'
+    for label, href in nav_items
+]) + "</div>"
+st.markdown(nav_html, unsafe_allow_html=True)
+
 # -----------------------------
 # Main view routing
 # -----------------------------
 
 if view == "home":
-    c1, c2, c3 = st.columns(3, gap="large")
+    c1, c2, c3 = st.columns(3, gap="small")
     cats = ["Health", "Gaming", "Higher education"]
     for idx, cat in enumerate(cats):
         with (c1, c2, c3)[idx]:
