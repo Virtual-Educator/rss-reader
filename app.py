@@ -18,9 +18,7 @@ APP_TITLE = "Newsboard RSS"
 ARCHIVE_PATH = "archive.json"
 
 st.set_page_config(page_title=APP_TITLE, layout="wide", page_icon="📰")
-
-# Show version so you can confirm the right file is loaded
-APP_VERSION = "v3-streamlit-primitives"
+APP_VERSION = "v4-polish"
 st.caption(f"Loaded {APP_VERSION} · {__file__}")
 
 # -----------------------------
@@ -28,7 +26,6 @@ st.caption(f"Loaded {APP_VERSION} · {__file__}")
 # -----------------------------
 
 def _get_query_params():
-    # Works with recent and older Streamlit
     try:
         return st.query_params.to_dict()
     except Exception:
@@ -36,14 +33,6 @@ def _get_query_params():
             return st.experimental_get_query_params()
         except Exception:
             return {}
-
-def _set_query_params(**kwargs):
-    try:
-        st.query_params.clear()
-        for k, v in kwargs.items():
-            st.query_params[k] = v
-    except Exception:
-        st.experimental_set_query_params(**kwargs)
 
 def site_name_from_url(url: str) -> str:
     try:
@@ -286,7 +275,10 @@ ensure_default_config()
 st.markdown(
     '''
     <style>
-    /* Make st.button look like small icon buttons */
+    /* Global links without underline */
+    a, a:visited { text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    /* Icon-only buttons */
     .stButton > button {
         border: none !important;
         background: transparent !important;
@@ -298,7 +290,6 @@ st.markdown(
         line-height: 1 !important;
     }
     .stButton > button:hover { background: rgba(255,255,255,0.07) !important; }
-    .chip a { text-decoration: none; }
     </style>
     ''',
     unsafe_allow_html=True,
@@ -339,9 +330,8 @@ def load_category_items(category: str, per_feed: int = 20):
 # -----------------------------
 
 def render_card(item: dict, key_prefix: str):
-    # Two-column card: text left, image right
-    with st.container():
-        left, right = st.columns([1.0, 0.36], gap="medium")
+    with st.container(border=True):
+        left, right = st.columns([1.0, 0.33], gap="medium")
         with left:
             title = item.get("title", "")
             link = item.get("link", "")
@@ -352,9 +342,9 @@ def render_card(item: dict, key_prefix: str):
         with right:
             img = item.get("image")
             if img:
-                st.image(img, use_column_width=True)
+                st.image(img, width=110)
 
-        # Actions area bottom-right
+        # Bottom-right action icons
         spacer, colA, colB = st.columns([0.75, 0.125, 0.125])
         with colA:
             if st.button("📑", key=f"apa_{key_prefix}", help="APA citation"):
@@ -392,7 +382,7 @@ def render_category_column(category: str, max_items: int):
         return
     for i, item in enumerate(items[:max_items]):
         render_card(item, key_prefix=f"{category}_{i}")
-    st.markdown(f"[More]({f'?view=category&name={category}'})")
+    st.page_link(f"?view=category&name={category}", label="More")
 
 def render_category_page(category: str):
     st.subheader(category)
@@ -430,7 +420,8 @@ params = _get_query_params()
 view = params.get("view", "home")
 name = params.get("name", "")
 
-chips = [
+nav_cols = st.columns(8)
+links = [
     ("All", "?view=home"),
     ("Health", "?view=category&name=Health"),
     ("Gaming", "?view=category&name=Gaming"),
@@ -440,10 +431,9 @@ chips = [
     ("AI in Business", "?view=category&name=AI in Business"),
     ("Archived", "?view=archive"),
 ]
-ccols = st.columns(len(chips))
-for idx, (label, href) in enumerate(chips):
-    with ccols[idx]:
-        st.markdown(f"[{label}]({href})")
+for i, (label, href) in enumerate(links):
+    with nav_cols[i]:
+        st.page_link(href, label=label)
 
 # -----------------------------
 # Main view routing
