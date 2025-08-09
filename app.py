@@ -212,7 +212,7 @@ def parse_feed(url: str, limit: int | None = None):
         summary = entry.get("summary") or entry.get("description") or ""
         summary = strip_html(summary)
         if len(summary) > 220:
-            summary = summary[:220].rstrip() + "…"
+            summary = summary[:250].rstrip() + "…"
 
         img = extract_image(entry)
         published_dt = try_parse_datetime(entry)
@@ -260,6 +260,9 @@ def ensure_default_config():
                 "https://hechingerreport.org/feed/",
                 "https://www.insidehighered.com/rss/news",
             ],
+            "World News": [],
+            "AI in Higher Education": [],
+            "AI in Business": [],
         }
     if "per_column" not in st.session_state:
         st.session_state["per_column"] = 5
@@ -309,7 +312,20 @@ st.markdown(
         justify-self: end;
     }
     .actions {
-        display: flex; gap: 10px; margin-top: 8px; align-items:center; justify-content: flex-start;
+        display: flex; gap: 8px; margin-top: 8px; align-items:center; justify-content: flex-end;
+    }
+    .stButton > button {
+        border: none !important;
+        background: transparent !important;
+        padding: 4px 6px !important;
+        font-size: 1.1rem !important;
+        box-shadow: none !important;
+        min-height: auto !important;
+        min-width: auto !important;
+        line-height: 1 !important;
+    }
+    .stButton > button:hover {
+        background: rgba(255,255,255,0.07) !important;
     }
     .action-btn {
         display: inline-flex; align-items: center; gap: 6px;
@@ -347,8 +363,24 @@ with st.sidebar:
         st.session_state["feeds"]["Gaming"] = [l.strip() for l in txt.splitlines() if l.strip()]
 
     with st.expander("Higher education feeds"):
-        txt = st.text_area("Higher education", "\n".join(st.session_state["feeds"]["Higher education"]), height=120, key="highered_feeds")
+        txt = st.text_area("Higher education", "
+".join(st.session_state["feeds"]["Higher education"]), height=120, key="highered_feeds")
         st.session_state["feeds"]["Higher education"] = [l.strip() for l in txt.splitlines() if l.strip()]
+
+    with st.expander("World News feeds"):
+        txt = st.text_area("World News", "
+".join(st.session_state["feeds"]["World News"]), height=120, key="world_feeds")
+        st.session_state["feeds"]["World News"] = [l.strip() for l in txt.splitlines() if l.strip()]
+
+    with st.expander("AI in Higher Education feeds"):
+        txt = st.text_area("AI in Higher Education", "
+".join(st.session_state["feeds"]["AI in Higher Education"]), height=120, key="ai_he_feeds")
+        st.session_state["feeds"]["AI in Higher Education"] = [l.strip() for l in txt.splitlines() if l.strip()]
+
+    with st.expander("AI in Business feeds"):
+        txt = st.text_area("AI in Business", "
+".join(st.session_state["feeds"]["AI in Business"]), height=120, key="ai_biz_feeds")
+        st.session_state["feeds"]["AI in Business"] = [l.strip() for l in txt.splitlines() if l.strip()]
 
     st.caption("Archive data is stored in archive.json located next to the app.py file.")
 
@@ -388,16 +420,14 @@ def render_card(item: dict, key_prefix: str):
             <div class="actions">
     """, unsafe_allow_html=True)
 
-    colA, colB, spacer = st.columns([0.15, 0.15, 0.70])
-    with colA:
-        if st.button("📑 APA", key=f"apa_{key_prefix}"):
-            st.session_state[f"show_apa_{key_prefix}"] = not st.session_state.get(f"show_apa_{key_prefix}", False)
-    with colB:
-        if st.button("📥 Archive", key=f"arc_{key_prefix}"):
-            add_to_archive(item)
-            st.toast("Saved to archive", icon="✅")
-    with spacer:
-        st.write("")
+    spacer, colA, colB = st.columns([0.8, 0.1, 0.1])
+with colA:
+    if st.button("📑", key=f"apa_{key_prefix}", help="APA citation"):
+        st.session_state[f"show_apa_{key_prefix}"] = not st.session_state.get(f"show_apa_{key_prefix}", False)
+with colB:
+    if st.button("📥", key=f"arc_{key_prefix}", help="Save to archive"):
+        add_to_archive(item)
+        st.toast("Saved to archive", icon="✅")
 
     if st.session_state.get(f"show_apa_{key_prefix}"):
         citation = make_apa_citation(item)
