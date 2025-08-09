@@ -294,12 +294,12 @@ st.markdown(
     .stButton > button {
         border: none !important;
         background: transparent !important;
-        /* padding: 2px 4px !important; */
-        /* font-size: .75rem !important; */
+        padding: 2px 4px !important;
+        font-size: .75rem !important;
         box-shadow: none !important;
-        /* min-height: auto !important; */
-        /* min-width: auto !important; */
-        /* line-height: 1 !important; */
+        min-height: auto !important;
+        min-width: auto !important;
+        line-height: 1 !important;
     }
     .stButton > button:hover { background: rgba(255,255,255,0.07) !important; }
 
