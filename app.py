@@ -15,59 +15,33 @@ from utils.archive import is_archived, add_to_archive
 st.set_page_config(page_title="Personal News Reader", layout="wide", initial_sidebar_state="collapsed")
 st.markdown("""
 <style>
-  /* Center app like a timeline */
   div.block-container { max-width: 1200px; margin-left:auto; margin-right:auto; }
 
-  /* Links: no underline */
   a { text-decoration: none !important; }
 
-  /* Category column container (card) */
-  .cat-card {
-    border: 1px solid #444;
-    border-radius: 16px;
-    padding: 14px 14px 6px 14px;
-    background: transparent;
-  }
+  .cat-card { border: 1px solid #2f2f2f; border-radius: 16px; padding: 12px; background: transparent; }
 
-  /* Category header */
-  .cat-header {
-    display:flex; align-items:center; justify-content:space-between;
-    font-size:1.1rem; font-weight:700; margin-bottom:8px;
-  }
+  .cat-header { display:flex; align-items:center; justify-content:space-between;
+                font-size:1.05rem; font-weight:700; margin: 4px 2px 8px 2px; }
   .cat-header a { color: inherit; }
 
-  /* News row */
-  .news-row {
-    display:grid; grid-template-columns: 1fr 84px; gap: 12px; align-items:start;
-    padding: 10px 0;
-  }
-  .news-divider { height:1px; background:#333; margin: 6px 0 4px 0; }
+  .news-row { display:grid; grid-template-columns: 1fr 84px; gap: 12px; align-items:start; padding: 8px 0; }
+  .news-divider { height:1px; background:#2b2b2b; margin: 6px 0 4px 0; }
 
-  /* Source line and title */
-  .source-line { color:#9aa0a6; font-size:0.9rem; margin-bottom:2px; }
-  .title a { color:inherit; font-weight:700; font-size:1.0rem; }
+  .source-line { color:#9aa0a6; font-size:0.85rem; margin:0 0 2px 0; }
+  .title a { color:inherit; font-weight:700; font-size:1.0rem; line-height:1.25; }
+  .snippet { color:#e8eaed; font-size:0.93rem; margin-top:6px; }
 
-  /* Snippet */
-  .snippet { color:#e8eaed; font-size:0.95rem; margin-top:6px; }
+  .thumb { width:84px; height:84px; object-fit:cover; border-radius:12px; background:#222; }
 
-  /* Thumbnail */
-  .thumb {
-    width: 84px; height: 84px; object-fit: cover; border-radius: 12px;
-    background:#222;
-  }
-
-  /* Tiny icon bar like GN actions */
-  .iconbar { display:flex; gap:8px; margin-top:8px; }
-  .iconbtn {
-    border:1px solid #444; border-radius:8px; padding:4px 6px; font-size:16px;
-    background:transparent; cursor:pointer;
-  }
-  .iconbtn:hover { background:#2a2a2a; }
-
-  /* Back link area */
-  .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  /* smaller, right-aligned icon row */
+  .iconrow { display:flex; gap:6px; justify-content:flex-end; margin-top:6px; }
+  .iconbtn { border:1px solid #3a3a3a; border-radius:10px; padding:2px 4px; font-size:14px;
+             min-width:28px; min-height:28px; background:transparent; cursor:pointer; }
+  .iconbtn:hover { background:#262626; }
 </style>
 """, unsafe_allow_html=True)
+
 
 # Paths and data
 BASE_DIR = os.path.dirname(__file__)
@@ -95,44 +69,54 @@ def first_img_from_summary(summary_html: str) -> str | None:
 def plain_text(html: str) -> str:
     return BeautifulSoup(html or "", "html.parser").get_text(" ", strip=True)
 
-def render_item(e: dict, idx_key: str):
+def render_item(e: dict, idx_key: str, show_author=True):
     link = e.get("link", "#")
     title = e.get("title", "[No title]")
+
+    # date (you asked for date only)
     date_str = e["published_parsed"].strftime("%Y-%m-%d") if e.get("published_parsed") else e.get("published", "")[:10]
+
+    # actual source is the article domain
     src = domain_of(link)
+
+    # author if present
+    author = e.get("author")
+    byline = f" • By {author}" if (show_author and author) else ""
+
+    # thumbnail from summary or fallback favicon
     thumb = first_img_from_summary(e.get("summary", "")) or f"https://www.google.com/s2/favicons?sz=128&domain={src}"
+
+    # plain-text snippet, 250 chars
     text = plain_text(e.get("summary", ""))
     length = e.get("snippet_length", 250) or 250
     snippet = text[:length] + ("..." if len(text) > length else "")
 
+    # row
     st.markdown('<div class="news-row">', unsafe_allow_html=True)
-    # Left block: source, title, snippet, icons
     st.markdown(
         f"""
         <div>
-          <div class="source-line">{src} • {date_str}</div>
+          <div class="source-line">{src} • {date_str}{byline}</div>
           <div class="title"><a href="{link}" target="_blank">{title}</a></div>
           <div class="snippet">{snippet}</div>
+          <div class="iconrow">
+            <button class="iconbtn" onclick="navigator.clipboard.writeText('{link}')">🔗</button>
+            <button class="iconbtn" onclick="window.open('{link}', '_blank')">🖨️</button>
+          </div>
         </div>
         """,
         unsafe_allow_html=True
     )
-    # Right block: thumbnail
     st.markdown(f'<img class="thumb" src="{thumb}"/>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Tiny action icons like GN (link, cite, print, archive)
-    c1, c2, c3, c4, _ = st.columns([1,1,1,1,10], gap="small")
-    if c1.button("🔗", key=f"lnk_{idx_key}", help="Copy link"):
-        pyperclip.copy(link)
-        st.info("Link copied")
-    if c2.button("📋", key=f"cit_{idx_key}", help="Copy citation"):
+    # two actions that need Python side-effects (citation and archive)
+    c1, c2, _ = st.columns([1,1,10], gap="small")
+    if c1.button("📋", key=f"cit_{idx_key}", help="Copy citation"):
         cit = build_apa_citation(e, {})
         pyperclip.copy(cit)
         st.info("Citation copied")
-    if c3.button("🖨️", key=f"prt_{idx_key}", help="Print view"):
-        st.markdown(f"[Open article]({link})")
-    if c4.button("📂", key=f"arc_{idx_key}", help="Archive"):
+    if c2.button("📂", key=f"arc_{idx_key}", help="Archive"):
         add_to_archive(link, ARCHIVE_PATH)
         st.info("Archived")
 
