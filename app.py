@@ -19,8 +19,16 @@ ARCHIVE_PATH = "archive.json"
 
 st.set_page_config(page_title=APP_TITLE, layout="wide", page_icon="📰")
 
+# Show version so you can confirm the right file is loaded
+APP_VERSION = "v3-streamlit-primitives"
+st.caption(f"Loaded {APP_VERSION} · {__file__}")
+
+# -----------------------------
+# Utilities
+# -----------------------------
 
 def _get_query_params():
+    # Works with recent and older Streamlit
     try:
         return st.query_params.to_dict()
     except Exception:
@@ -101,16 +109,13 @@ def extract_image(entry):
             url = media[0].get("url")
             if url and url.lower().startswith("http"):
                 return url
-
     for link in entry.get("links", []):
         if link.get("rel") == "enclosure" and str(link.get("type", "")).startswith("image"):
             return link.get("href")
-
     summary = entry.get("summary") or entry.get("description") or ""
     m = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', summary, flags=re.IGNORECASE)
     if m:
         return m.group(1)
-
     return None
 
 def google_favicon(url: str) -> str:
@@ -146,21 +151,18 @@ def make_apa_citation(item: dict) -> str:
             author_field = ", ".join(names[:-1]) + f", & {names[-1]}"
     else:
         author_field = item.get("site", "")
-
     pub_dt = item.get("published_dt")
     if pub_dt:
         month_name = pub_dt.strftime("%B")
         date_str = f"{pub_dt.year}, {month_name} {pub_dt.day}"
     else:
         date_str = dt.datetime.now().strftime("%Y")
-
     title = item.get("title", "").strip()
     site = item.get("site", "").strip()
     url = item.get("link", "").strip()
     if title:
         title = title[:1].upper() + title[1:]
-    citation = f"{author_field} ({date_str}). {title}. {site}. {url}"
-    return citation
+    return f"{author_field} ({date_str}). {title}. {site}. {url}"
 
 def load_archive():
     if os.path.exists(ARCHIVE_PATH):
@@ -184,7 +186,7 @@ def add_to_archive(item):
         items.insert(0, item)
         save_archive(items)
 
-def remove_from_archive(link: str) -> None:
+def remove_from_archive(link: str):
     items = [x for x in load_archive() if x.get("link") != link]
     save_archive(items)
 
@@ -206,11 +208,9 @@ def parse_feed(url: str, limit: int | None = None):
         summary = strip_html(summary)
         if len(summary) > 250:
             summary = summary[:250].rstrip() + "…"
-
         img = extract_image(entry)
         published_dt = try_parse_datetime(entry)
         site = site_name_from_url(link) or site_name_from_url(url) or (fp.feed.get("title") if fp and fp.feed else "")
-
         authors = []
         if "authors" in entry and isinstance(entry["authors"], list):
             for a in entry["authors"]:
@@ -219,7 +219,6 @@ def parse_feed(url: str, limit: int | None = None):
                     authors.append(name)
         elif entry.get("author"):
             authors = [entry.get("author")]
-
         items.append({
             "title": title,
             "summary": summary,
@@ -234,7 +233,6 @@ def parse_feed(url: str, limit: int | None = None):
         if limit and len(items) >= limit:
             break
     return items
-
 
 def ensure_default_config():
     default_feeds = {
@@ -273,57 +271,22 @@ def ensure_default_config():
     if "feeds" not in st.session_state:
         st.session_state["feeds"] = default_feeds
     else:
-        # Merge in any missing categories without overwriting existing ones
         for k, v in default_feeds.items():
             if k not in st.session_state["feeds"] or not isinstance(st.session_state["feeds"][k], list):
                 st.session_state["feeds"][k] = v
     if "per_column" not in st.session_state:
         st.session_state["per_column"] = 5
 
-
 ensure_default_config()
 
-st.markdown(
-    """
+# -----------------------------
+# Styles
+# -----------------------------
 
+st.markdown(
+    '''
     <style>
-    :root {
-        --card-bg: rgba(255,255,255,0.04);
-        --card-border: rgba(255,255,255,0.08);
-        --muted: rgba(255,255,255,0.6);
-    }
-    .page-title { font-size: 1.6rem; margin: 0 0 8px 0; }
-    .topnav { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
-    .navlink, .navlink:visited {
-        color: inherit; text-decoration: none; padding: 6px 10px;
-        border-radius: 999px; border: 1px solid var(--card-border); background: var(--card-bg);
-        font-size: 0.95rem;
-    }
-    .navlink.active { border-color: rgba(99,102,241,0.6); box-shadow: 0 0 0 2px rgba(99,102,241,0.25) inset; }
-    a.card-title, a.card-title:visited { color: inherit; text-decoration: none; }
-    .card {
-        border: 1px solid var(--card-border);
-        background: var(--card-bg);
-        border-radius: 16px;
-        padding: 14px 16px;
-        margin: 10px 0;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-    }
-    .card-row {
-        display: grid;
-        grid-template-columns: 1fr minmax(90px, 110px);
-        gap: 14px;
-        align-items: center;
-    }
-    .meta { font-size: 0.87rem; color: var(--muted); display:flex; align-items:center; gap:8px; }
-    .meta img { border-radius: 6px; }
-    .thumb {
-        width: 110px; height: 110px; object-fit: cover; border-radius: 12px; border: 1px solid var(--card-border);
-        justify-self: end;
-    }
-    .actions {
-        display: flex; gap: 8px; margin-top: 8px; align-items:center; justify-content: flex-end;
-    }
+    /* Make st.button look like small icon buttons */
     .stButton > button {
         border: none !important;
         background: transparent !important;
@@ -334,374 +297,167 @@ st.markdown(
         min-width: auto !important;
         line-height: 1 !important;
     }
-    .stButton > button:hover {
-        background: rgba(255,255,255,0.07) !important;
-    }
+    .stButton > button:hover { background: rgba(255,255,255,0.07) !important; }
+    .chip a { text-decoration: none; }
     </style>
-    """,
-
+    ''',
     unsafe_allow_html=True,
-
 )
 
+# -----------------------------
+# Sidebar controls
+# -----------------------------
 
 with st.sidebar:
-
     st.header("Settings")
-
-    per_col = st.slider("Stories per column", 3, 10, st.session_state["per_column"]) 
-
+    per_col = st.slider("Stories per column", 3, 10, st.session_state["per_column"])
     st.session_state["per_column"] = per_col
-
-
 
     st.caption("Edit feeds below. One feed per line.")
 
-
-
-    with st.expander("Health feeds"):
-
-        txt = st.text_area("Health", "\n".join(st.session_state["feeds"]["Health"]), height=120, key="health_feeds")
-
-        st.session_state["feeds"]["Health"] = [l.strip() for l in txt.splitlines() if l.strip()]
-
-
-
-    with st.expander("Gaming feeds"):
-
-        txt = st.text_area("Gaming", "\n".join(st.session_state["feeds"]["Gaming"]), height=120, key="gaming_feeds")
-
-        st.session_state["feeds"]["Gaming"] = [l.strip() for l in txt.splitlines() if l.strip()]
-
-
-
-    with st.expander("Higher education feeds"):
-
-        txt = st.text_area("Higher education", "\n".join(st.session_state["feeds"].get("Higher education", [])), height=120, key="highered_feeds")
-
-        st.session_state["feeds"]["Higher education"] = [l.strip() for l in txt.splitlines() if l.strip()]
-
-
-
-    with st.expander("World News feeds"):
-
-        txt = st.text_area("World News", "\n".join(st.session_state["feeds"].get("World News", [])), height=120, key="world_feeds")
-
-        st.session_state["feeds"]["World News"] = [l.strip() for l in txt.splitlines() if l.strip()]
-
-
-
-    with st.expander("AI in Higher Education feeds"):
-
-        txt = st.text_area("AI in Higher Education", "\n".join(st.session_state["feeds"].get("AI in Higher Education", [])), height=120, key="ai_he_feeds")
-
-        st.session_state["feeds"]["AI in Higher Education"] = [l.strip() for l in txt.splitlines() if l.strip()]
-
-
-
-    with st.expander("AI in Business feeds"):
-
-        txt = st.text_area("AI in Business", "\n".join(st.session_state["feeds"].get("AI in Business", [])), height=120, key="ai_biz_feeds")
-
-        st.session_state["feeds"]["AI in Business"] = [l.strip() for l in txt.splitlines() if l.strip()]
-
-
+    for cat in ["Health", "Gaming", "Higher education", "World News", "AI in Higher Education", "AI in Business"]:
+        with st.expander(f"{cat} feeds"):
+            txt = st.text_area(cat, "\n".join(st.session_state["feeds"].get(cat, [])), height=120, key=f"{cat}_feeds")
+            st.session_state["feeds"][cat] = [l.strip() for l in txt.splitlines() if l.strip()]
 
     st.caption("Archive data is stored in archive.json located next to the app.py file.")
 
-
+# -----------------------------
+# Data loading helpers
+# -----------------------------
 
 @st.cache_data(ttl=300, show_spinner=False)
-
 def load_category_items(category: str, per_feed: int = 20):
-
     items = []
-
-    feeds = st.session_state["feeds"].get(category, [])
-
-    for url in feeds:
-
+    for url in st.session_state["feeds"].get(category, []):
         items.extend(parse_feed(url, limit=per_feed))
-
     items.sort(key=lambda x: x.get("published_dt") or dt.datetime.min.replace(tzinfo=dt.timezone.utc), reverse=True)
-
     return items
 
-
+# -----------------------------
+# Card renderer
+# -----------------------------
 
 def render_card(item: dict, key_prefix: str):
-
-    title = item.get("title", "")
-
-    link = item.get("link", "")
-
-    summary = item.get("summary", "")
-
-    site = item.get("site", "")
-
-    time_h = item.get("published_human", "")
-
-    favicon = item.get("favicon", "")
-
-    img = item.get("image")
-
-
-
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-
-    st.markdown('<div class="card-row">', unsafe_allow_html=True)
-
-
-
-    st.markdown(f"""
-
-        <div>
-
-            <a class="card-title" href="{html.escape(link)}" target="_blank">
-
-                <div style="font-size:1.05rem; font-weight:600; line-height:1.3;">{html.escape(title)}</div>
-
-            </a>
-
-            <div style="margin-top:6px; font-size:0.95rem;">{html.escape(summary)}</div>
-
-            <div class=\"actions\"> 
-
-    """, unsafe_allow_html=True)
-
-
-
-    spacer, colA, colB = st.columns([0.8, 0.1, 0.1])
-
-    with colA:
-
-        if st.button("📑", key=f"apa_{key_prefix}", help="APA citation"):
-
-            st.session_state[f"show_apa_{key_prefix}"] = not st.session_state.get(f"show_apa_{key_prefix}", False)
-
-    with colB:
-
-        if st.button("📥", key=f"arc_{key_prefix}", help="Save to archive"):
-
-            add_to_archive(item)
-
-            st.toast("Saved to archive", icon="✅")
-
-
-
-    if st.session_state.get(f"show_apa_{key_prefix}"):
-
-        citation = make_apa_citation(item)
-
-        st.code(citation)
-
-
-
-    st.markdown('</div>', unsafe_allow_html=True)  # .actions
-
-    st.markdown('</div>', unsafe_allow_html=True)  # left cell
-
-
-
-    if img:
-
-        st.markdown(f'<img class="thumb" src="{html.escape(img)}" alt="" loading="lazy">', unsafe_allow_html=True)
-
-    else:
-
-        st.markdown('<div></div>', unsafe_allow_html=True)
-
-
-
-    st.markdown('</div>', unsafe_allow_html=True)  # .card-row
-
-
-
-    meta_html = f'''
-
-        <div class="meta">
-
-            {'<img src="'+html.escape(favicon)+'" width="16" height="16">' if favicon else ''}
-
-            <span>{html.escape(site)}</span>
-
-            <span>•</span>
-
-            <span>{html.escape(time_h)}</span>
-
-        </div>
-
-    '''
-
-    st.markdown(meta_html, unsafe_allow_html=True)
-
-
-
-    st.markdown('</div>', unsafe_allow_html=True)  # .card
-
-
+    # Two-column card: text left, image right
+    with st.container():
+        left, right = st.columns([1.0, 0.36], gap="medium")
+        with left:
+            title = item.get("title", "")
+            link = item.get("link", "")
+            summary = item.get("summary", "")
+            st.markdown(f"[{title}]({link})")
+            if summary:
+                st.write(summary)
+        with right:
+            img = item.get("image")
+            if img:
+                st.image(img, use_column_width=True)
+
+        # Actions area bottom-right
+        spacer, colA, colB = st.columns([0.75, 0.125, 0.125])
+        with colA:
+            if st.button("📑", key=f"apa_{key_prefix}", help="APA citation"):
+                st.session_state[f"show_apa_{key_prefix}"] = not st.session_state.get(f"show_apa_{key_prefix}", False)
+        with colB:
+            if st.button("📥", key=f"arc_{key_prefix}", help="Save to archive"):
+                add_to_archive(item)
+                st.toast("Saved to archive", icon="✅")
+
+        if st.session_state.get(f"show_apa_{key_prefix}"):
+            st.code(make_apa_citation(item))
+
+        # Meta row
+        fav = item.get("favicon")
+        site = item.get("site", "")
+        time_h = item.get("published_human", "")
+        m1, m2, m3 = st.columns([0.05, 0.65, 0.30])
+        with m1:
+            if fav:
+                st.image(fav, width=16)
+        with m2:
+            st.caption(site)
+        with m3:
+            st.caption(time_h)
+
+# -----------------------------
+# Category views
+# -----------------------------
 
 def render_category_column(category: str, max_items: int):
-
-    st.markdown(f'<div class="category-title">{html.escape(category)}</div>', unsafe_allow_html=True)
-
+    st.subheader(category)
     items = load_category_items(category)
-
     if not items:
-
         st.info("No items found. Add feeds in the sidebar.")
-
         return
-
     for i, item in enumerate(items[:max_items]):
-
         render_card(item, key_prefix=f"{category}_{i}")
-
-
-
-    st.markdown(f'<a class="more-link" href="?view=category&name={category}">More</a>', unsafe_allow_html=True)
-
-
+    st.markdown(f"[More]({f'?view=category&name={category}'})")
 
 def render_category_page(category: str):
-
     st.subheader(category)
-
     items = load_category_items(category)
-
     if not items:
-
         st.info("No items found. Add feeds in the sidebar.")
-
         return
-
     for i, item in enumerate(items):
-
         render_card(item, key_prefix=f"{category}_full_{i}")
 
-
-
 def render_archive_page():
-
     st.subheader("Archived")
-
     items = load_archive()
-
     if not items:
-
         st.info("Nothing here yet. Use the Archive icon on any card.")
-
         return
-
-
-
     if st.button("Clear all"):
-
         save_archive([])
-
         st.experimental_rerun()
-
-
-
     for i, item in enumerate(items):
+        render_card(item, key_prefix=f"arch_{i}")
+        col1, _, _ = st.columns([0.2, 0.4, 0.4])
+        with col1:
+            if st.button("🗑️ Remove", key=f"rm_{i}"):
+                remove_from_archive(item.get("link", ""))
+                st.experimental_rerun()
 
-        with st.container():
+# -----------------------------
+# Header and nav
+# -----------------------------
 
-            render_card(item, key_prefix=f"arch_{i}")
-
-            col1, col2, _ = st.columns([0.2, 0.2, 0.6])
-
-            with col1:
-
-                if st.button("🗑️ Remove", key=f"rm_{i}"):
-
-                    remove_from_archive(item.get("link", ""))
-
-                    st.experimental_rerun()
-
-
-
-st.markdown(f'<div class="page-title">{APP_TITLE}</div>', unsafe_allow_html=True)
-
-
+st.title(APP_TITLE)
 
 params = _get_query_params()
+view = params.get("view", "home")
+name = params.get("name", "")
 
-view = params.get("view", ["home"] if isinstance(params.get("view"), list) else params.get("view")) or "home"
+chips = [
+    ("All", "?view=home"),
+    ("Health", "?view=category&name=Health"),
+    ("Gaming", "?view=category&name=Gaming"),
+    ("Higher education", "?view=category&name=Higher education"),
+    ("World News", "?view=category&name=World News"),
+    ("AI in Higher Education", "?view=category&name=AI in Higher Education"),
+    ("AI in Business", "?view=category&name=AI in Business"),
+    ("Archived", "?view=archive"),
+]
+ccols = st.columns(len(chips))
+for idx, (label, href) in enumerate(chips):
+    with ccols[idx]:
+        st.markdown(f"[{label}]({href})")
 
-if isinstance(view, list):
-
-    view = view[0]
-
-
-
-name = params.get("name", [""] if isinstance(params.get("name"), list) else params.get("name")) or ""
-
-if isinstance(name, list):
-
-    name = name[0]
-
-
-
-nav = st.container()
-
-with nav:
-
-    st.markdown('<div class="topnav">', unsafe_allow_html=True)
-
-    home_class = "navlink active" if view == "home" else "navlink"
-
-    st.markdown(f'<a class="{home_class}" href="?view=home">All</a>', unsafe_allow_html=True)
-
-    for cat in st.session_state["feeds"].keys():
-
-        cls = "navlink active" if (view == "category" and name == cat) else "navlink"
-
-        st.markdown(f'<a class="{cls}" href="?view=category&name={cat}">{html.escape(cat)}</a>', unsafe_allow_html=True)
-
-    arc_cls = "navlink active" if view == "archive" else "navlink"
-
-    st.markdown(f'<a class="{arc_cls}" href="?view=archive">Archived</a>', unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
+# -----------------------------
+# Main view routing
+# -----------------------------
 
 if view == "home":
-
-    cols = st.columns(3, gap="large")
-
-    cats = list(st.session_state["feeds"].keys())
-
-    if len(cats) < 3:
-
-        while len(cats) < 3:
-
-            cats.append("")
-
-    for idx in range(3):
-
-        with cols[idx]:
-
-            cat = cats[idx]
-
-            if cat:
-
-                render_category_column(cat, st.session_state["per_column"])
-
-            else:
-
-                st.write("")
-
+    c1, c2, c3 = st.columns(3, gap="large")
+    cats = ["Health", "Gaming", "Higher education"]
+    for idx, cat in enumerate(cats):
+        with (c1, c2, c3)[idx]:
+            render_category_column(cat, st.session_state["per_column"])
 elif view == "category" and name in st.session_state["feeds"]:
-
     render_category_page(name)
-
 elif view == "archive":
-
     render_archive_page()
-
 else:
-
     st.info("Pick a category from the navigation.")
-
