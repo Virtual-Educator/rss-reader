@@ -1,4 +1,3 @@
-
 import os
 import re
 import json
@@ -19,9 +18,7 @@ ARCHIVE_PATH = "archive.json"
 
 st.set_page_config(page_title=APP_TITLE, layout="wide", page_icon="📰")
 
-# -----------------------------
 # Utilities
-# -----------------------------
 
 def _get_query_params():
     try:
@@ -222,6 +219,7 @@ def parse_feed(url: str, limit: int | None = None):
     return items
 
 def ensure_default_config():
+    # Order is intentional and preserved
     default_feeds = {
         "World News": [
             "https://feeds.bbci.co.uk/news/world/rss.xml",
@@ -239,6 +237,11 @@ def ensure_default_config():
             "https://www.technologyreview.com/feed/",
             "https://www.theverge.com/ai-artificial-intelligence/rss",
         ],
+        "Higher education": [
+            "https://www.highereddive.com/feeds/news/",
+            "https://hechingerreport.org/feed/",
+            "https://www.insidehighered.com/rss/news",
+        ],
         "Health": [
             "https://www.statnews.com/feed/",
             "https://www.medicalnewstoday.com/rss",
@@ -248,11 +251,6 @@ def ensure_default_config():
             "https://www.gamespot.com/feeds/mashup/",
             "https://www.eurogamer.net/feed/news",
             "https://www.pcgamer.com/rss/",
-        ],
-        "Higher education": [
-            "https://www.highereddive.com/feeds/news/",
-            "https://hechingerreport.org/feed/",
-            "https://www.insidehighered.com/rss/news",
         ],
     }
     if "feeds" not in st.session_state:
@@ -266,23 +264,18 @@ def ensure_default_config():
 
 ensure_default_config()
 
-# -----------------------------
 # Styles
-# -----------------------------
 
 st.markdown(
-    '''
+    """
     <style>
-    /* cap content width and tighten vertical rhythm */
-    .main .block-container { max-width: 1900px; padding-top: 0.25rem; padding-bottom: 0.25rem; }
-    div[data-testid="stVerticalBlock"] { gap: 0.25rem !important; }
-    div[data-testid="stHorizontalBlock"] { gap: 0.5rem !important; }
+    .main .block-container { max-width: 1900px; padding-top: 0.2rem; padding-bottom: 0.2rem; }
+    div[data-testid="stVerticalBlock"] { gap: 0.2rem !important; }
+    div[data-testid="stHorizontalBlock"] { gap: 0.4rem !important; }
 
-    /* link styling: never underline */
     a, a:visited, a:hover { text-decoration: none !important; }
 
-    /* nav buttons */
-    .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 0 0 8px 0; }
+    .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; margin: 0 0 12px 0; }
     .nav-grid a {
         display: block; text-align: center; padding: 8px 12px; border-radius: 999px;
         border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
@@ -290,12 +283,11 @@ st.markdown(
     }
     .nav-grid a.active { border-color: rgba(99,102,241,0.6); box-shadow: 0 0 0 2px rgba(99,102,241,0.25) inset; }
 
-    /* icon-only buttons look light */
     .stButton > button {
         border: none !important;
         background: transparent !important;
-        padding: 2px 4px !important;
-        font-size: .75rem !important;
+        padding: 1px 3px !important;
+        font-size: 0.7rem !important;
         box-shadow: none !important;
         min-height: auto !important;
         min-width: auto !important;
@@ -303,16 +295,16 @@ st.markdown(
     }
     .stButton > button:hover { background: rgba(255,255,255,0.07) !important; }
 
-    /* card title size */
-    .card-title { font-size: 1.35rem; font-weight: 600; line-height: 1.25; margin-bottom: 0.80rem; }
+    .card-title { font-size: 1.35rem; font-weight: 600; line-height: 1.25; margin-bottom: 0.6rem; }
+
+    h3 { margin-top: 1.0rem !important; margin-bottom: 0.35rem !important; }
+    .section-h { margin-top: 1.0rem; margin-bottom: 0.4rem; }
     </style>
-    ''',
+    """,
     unsafe_allow_html=True,
 )
 
-# -----------------------------
-# Sidebar controls
-# -----------------------------
+# Sidebar
 
 with st.sidebar:
     st.header("Settings")
@@ -321,16 +313,14 @@ with st.sidebar:
 
     st.caption("Edit feeds below. One feed per line.")
 
-    for cat in ["World News", "AI in Higher Education", "AI in Business", "Health", "Gaming", "Higher Education"]:
+    for cat in list(st.session_state["feeds"].keys()):
         with st.expander(f"{cat} feeds"):
             txt = st.text_area(cat, "\n".join(st.session_state["feeds"].get(cat, [])), height=120, key=f"{cat}_feeds")
             st.session_state["feeds"][cat] = [l.strip() for l in txt.splitlines() if l.strip()]
 
     st.caption("Archive data is stored in archive.json located next to the app.py file.")
 
-# -----------------------------
-# Data loading helpers
-# -----------------------------
+# Data
 
 @st.cache_data(ttl=300, show_spinner=False)
 def load_category_items(category: str, per_feed: int = 20):
@@ -340,13 +330,11 @@ def load_category_items(category: str, per_feed: int = 20):
     items.sort(key=lambda x: x.get("published_dt") or dt.datetime.min.replace(tzinfo=dt.timezone.utc), reverse=True)
     return items
 
-# -----------------------------
 # Card renderer
-# -----------------------------
 
 def render_card(item: dict, key_prefix: str):
     with st.container(border=True):
-        left, right = st.columns([1.0, 0.36], gap="small")
+        left, right = st.columns([1.0, 0.33], gap="small")
         with left:
             title = html.escape(item.get("title", ""))
             link = html.escape(item.get("link", ""))
@@ -357,20 +345,7 @@ def render_card(item: dict, key_prefix: str):
         with right:
             img = item.get("image")
             if img:
-                st.image(img, width=170)  # larger thumbnail
-
-        # Bottom-right action icons
-        spacer, colA, colB = st.columns([0.78, 0.11, 0.11])
-        with colA:
-            if st.button("📑", key=f"apa_{key_prefix}", help="APA citation"):
-                st.session_state[f"show_apa_{key_prefix}"] = not st.session_state.get(f"show_apa_{key_prefix}", False)
-        with colB:
-            if st.button("📥", key=f"arc_{key_prefix}", help="Save to archive"):
-                add_to_archive(item)
-                st.toast("Saved to archive", icon="✅")
-
-        if st.session_state.get(f"show_apa_{key_prefix}"):
-            st.code(make_apa_citation(item))
+                st.image(img, width=200)
 
         # Meta row
         fav = item.get("favicon")
@@ -385,12 +360,23 @@ def render_card(item: dict, key_prefix: str):
         with m3:
             st.caption(time_h)
 
-# -----------------------------
+        # Final row: icons left, citation right
+        act_col, cite_col = st.columns([0.22, 0.78])
+        with act_col:
+            if st.button("📑", key=f"apa_{key_prefix}", help="APA citation"):
+                st.session_state[f"show_apa_{key_prefix}"] = not st.session_state.get(f"show_apa_{key_prefix}", False)
+            st.write("")
+            if st.button("📥", key=f"arc_{key_prefix}", help="Save to archive"):
+                add_to_archive(item)
+                st.toast("Saved to archive", icon="✅")
+        with cite_col:
+            if st.session_state.get(f"show_apa_{key_prefix}"):
+                st.code(make_apa_citation(item))
+
 # Category views
-# -----------------------------
 
 def render_category_column(category: str, max_items: int):
-    st.subheader(category)
+    st.markdown(f'<h3 class="section-h">{html.escape(category)}</h3>', unsafe_allow_html=True)
     items = load_category_items(category)
     if not items:
         st.info("No items found. Add feeds in the sidebar.")
@@ -400,7 +386,7 @@ def render_category_column(category: str, max_items: int):
     st.markdown(f'<a href="?view=category&name={quote(category)}">More</a>', unsafe_allow_html=True)
 
 def render_category_page(category: str):
-    st.subheader(category)
+    st.markdown(f'<h3 class="section-h">{html.escape(category)}</h3>', unsafe_allow_html=True)
     items = load_category_items(category)
     if not items:
         st.info("No items found. Add feeds in the sidebar.")
@@ -425,9 +411,7 @@ def render_archive_page():
                 remove_from_archive(item.get("link", ""))
                 st.experimental_rerun()
 
-# -----------------------------
 # Header and nav
-# -----------------------------
 
 st.title(APP_TITLE)
 
@@ -441,31 +425,21 @@ active_map = {
     "category": name or "",
 }
 
-nav_items = [
-    ("All", "?view=home"),
-    ("World News", f"?view=category&name={quote('World News')}"),
-    ("AI in Higher Education", f"?view=category&name={quote('AI in Higher Education')}"),
-    ("AI in Business", f"?view=category&name={quote('AI in Business')}"),
-    ("Higher education", f"?view=category&name={quote('Higher education')}"),
-    ("Health", f"?view=category&name={quote('Health')}"),
-    ("Gaming", f"?view=category&name={quote('Gaming')}"),
-    ("Archived", "?view=archive"),
-]
+ordered_cats = list(st.session_state["feeds"].keys())
+nav_items = [("All", "?view=home")] + [(c, f"?view=category&name={quote(c)}") for c in ordered_cats] + [("Archived", "?view=archive")]
 nav_html = '<div class="nav-grid">' + "".join([
     f'<a class="{"active" if label == active_map.get("category", active_map.get(view,"")) else ""}" href="{href}">{label}</a>'
     for label, href in nav_items
 ]) + "</div>"
 st.markdown(nav_html, unsafe_allow_html=True)
 
-# -----------------------------
-# Main view routing
-# -----------------------------
+# Routing
 
 if view == "home":
-    c1, c2, c3 = st.columns(3, gap="small")
-    cats = ["Health", "Gaming", "Higher education"]
+    cols = st.columns(3, gap="small")
+    cats = list(st.session_state["feeds"].keys())
     for idx, cat in enumerate(cats):
-        with (c1, c2, c3)[idx]:
+        with cols[idx % 3]:
             render_category_column(cat, st.session_state["per_column"])
 elif view == "category" and name in st.session_state["feeds"]:
     render_category_page(name)
