@@ -5,7 +5,7 @@ import json
 import time
 import html
 import datetime as dt
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 
 import streamlit as st
 
@@ -382,7 +382,7 @@ def render_category_column(category: str, max_items: int):
         return
     for i, item in enumerate(items[:max_items]):
         render_card(item, key_prefix=f"{category}_{i}")
-    st.page_link(f"?view=category&name={category}", label="More")
+    st.markdown(f'<a href="?view=category&name={quote(category)}">More</a>', unsafe_allow_html=True)
 
 def render_category_page(category: str):
     st.subheader(category)
@@ -410,6 +410,7 @@ def render_archive_page():
                 remove_from_archive(item.get("link", ""))
                 st.experimental_rerun()
 
+
 # -----------------------------
 # Header and nav
 # -----------------------------
@@ -420,21 +421,19 @@ params = _get_query_params()
 view = params.get("view", "home")
 name = params.get("name", "")
 
-nav_cols = st.columns(8)
-links = [
+# Build chip-like nav using encoded links
+nav_items = [
     ("All", "?view=home"),
-    ("Health", "?view=category&name=Health"),
-    ("Gaming", "?view=category&name=Gaming"),
-    ("Higher education", "?view=category&name=Higher education"),
-    ("World News", "?view=category&name=World News"),
-    ("AI in Higher Education", "?view=category&name=AI in Higher Education"),
-    ("AI in Business", "?view=category&name=AI in Business"),
+    ("Health", f"?view=category&name={quote('Health')}"),
+    ("Gaming", f"?view=category&name={quote('Gaming')}"),
+    ("Higher education", f"?view=category&name={quote('Higher education')}"),
+    ("World News", f"?view=category&name={quote('World News')}"),
+    ("AI in Higher Education", f"?view=category&name={quote('AI in Higher Education')}"),
+    ("AI in Business", f"?view=category&name={quote('AI in Business')}"),
     ("Archived", "?view=archive"),
 ]
-for i, (label, href) in enumerate(links):
-    with nav_cols[i]:
-        st.page_link(href, label=label)
-
+links_html = " ".join([f'<a href="{href}">{label}</a>' for label, href in nav_items])
+st.markdown(links_html, unsafe_allow_html=True)
 # -----------------------------
 # Main view routing
 # -----------------------------
