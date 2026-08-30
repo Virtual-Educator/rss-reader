@@ -1,6 +1,74 @@
 [
   {
-    "url": "https://www.insidehighered.com/rss/news",
+    "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+    "category": "World News"
+  },
+  {
+    "url": "https://feeds.npr.org/1001/rss.xml",
+    "category": "World News"
+  },
+  {
+    "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+    "category": "World News"
+  },
+  {
+    "url": "https://abcnews.go.com/abcnews/internationalheadlines",
+    "category": "World News"
+  },
+  {
+    "url": "https://www.aljazeera.com/xml/rss/all.xml",
+    "category": "World News"
+  },
+  {
+    "url": "https://www.insidehighered.com/rss.xml",
+    "category": "AI in Higher Education"
+  },
+  {
+    "url": "https://er.educause.edu/rss",
+    "category": "AI in Higher Education"
+  },
+  {
+    "url": "https://www.highereddive.com/feeds/news/",
+    "category": "AI in Higher Education"
+  },
+  {
+    "url": "https://hechingerreport.org/feed/",
+    "category": "AI in Higher Education"
+  },
+  {
+    "url": "https://arxiv.org/rss/cs.AI",
+    "category": "AI in Higher Education"
+  },
+  {
+    "url": "https://www.technologyreview.com/feed/",
+    "category": "AI in Higher Education"
+  },
+  {
+    "url": "https://sloanreview.mit.edu/feed/",
+    "category": "AI in Business"
+  },
+  {
+    "url": "https://hbr.org/feed",
+    "category": "AI in Business"
+  },
+  {
+    "url": "https://www.technologyreview.com/feed/",
+    "category": "AI in Business"
+  },
+  {
+    "url": "https://venturebeat.com/feed/",
+    "category": "AI in Business"
+  },
+  {
+    "url": "https://feeds.arstechnica.com/arstechnica/index",
+    "category": "AI in Business"
+  },
+  {
+    "url": "https://feeds.bbci.co.uk/news/technology/rss.xml",
+    "category": "AI in Business"
+  },
+  {
+    "url": "https://www.insidehighered.com/rss.xml",
     "category": "Higher Education"
   },
   {
@@ -8,112 +76,71 @@
     "category": "Higher Education"
   },
   {
-    "url": "https://bair.berkeley.edu/blog/feed.xml",
-    "category": "AI Research"
+    "url": "https://www.chronicle.com/section/news/rss",
+    "category": "Higher Education"
   },
   {
-    "url": "https://news.mit.edu/rss/topic/artificial-intelligence",
-    "category": "AI Research"
+    "url": "https://hechingerreport.org/feed/",
+    "category": "Higher Education"
   },
   {
-    "url": "https://unite.ai/feed",
-    "category": "AI"
+    "url": "https://www.universityworldnews.com/rss.php",
+    "category": "Higher Education"
   },
   {
-    "url": "https://www.sciencenews.org/rss",
-    "category": "Science"
+    "url": "https://feeds.npr.org/1013/rss.xml",
+    "category": "Higher Education"
   },
   {
-    "url": "https://www.nature.com/subjects/machine-learning.rss",
-    "category": "Science/AI"
+    "url": "https://www.cdc.gov/media/rss.xml",
+    "category": "Health"
   },
   {
-    "url": "https://www.sciencedaily.com/rss/all.xml",
-    "category": "Science"
+    "url": "https://www.nih.gov/news-events/news-releases/rss.xml",
+    "category": "Health"
   },
   {
-    "url": "https://www.lseg.com/en/data-analytics/financial-news-service",
-    "category": "Business & Economics"
+    "url": "https://www.who.int/rss-feeds/news-english.xml",
+    "category": "Health"
   },
   {
-    "url": "https://www.stlouisfed.org/rss",
-    "category": "Business & Economics"
+    "url": "https://feeds.npr.org/1128/rss.xml",
+    "category": "Health"
   },
   {
-    "url": "https://www.theverge.com/rss/index.xml",
-    "category": "Technology"
+    "url": "https://feeds.npr.org/1007/rss.xml",
+    "category": "Health"
   },
   {
-    "url": "https://www.theverge.com/rss/ai-artificial-i/index.xml",
-    "category": "AI & Technology"
+    "url": "https://www.statnews.com/feed/",
+    "category": "Health"
   },
   {
-    "url": "https://techcrunch.com/feed/",
-    "category": "Technology"
+    "url": "https://www.gamedeveloper.com/rss.xml",
+    "category": "Gaming"
   },
   {
-    "url": "https://venturebeat.com/feed/",
-    "category": "Technology"
+    "url": "https://www.gamesindustry.biz/rss/gamesindustry_news_feed.rss",
+    "category": "Gaming"
   },
   {
-    "url": "https://www.zdnet.com/news/rss.xml",
-    "category": "Technology"
+    "url": "https://www.eurogamer.net/feed",
+    "category": "Gaming"
   },
   {
-    "url": "https://www.zdnet.com/topic/ai/rss.xml",
-    "category": "AI & Technology"
+    "url": "https://www.pcgamer.com/rss/",
+    "category": "Gaming"
   },
   {
-    "url": "https://www.cnet.com/rss/",
-    "category": "Technology"
+    "url": "https://www.rockpapershotgun.com/feed",
+    "category": "Gaming"
   },
   {
-    "url": "https://feeder.co/discover/b36018dfed/variety-com",
-    "category": "Technology"
+    "url": "https://www.polygon.com/rss/index.xml",
+    "category": "Gaming"
   },
   {
-    "url": "https://rapidapi.com/dineybomfim/api/midjourneyfeed",
-    "category": "AI & Technology"
-  },
-  {
-    "url": "https://openai.com/blog/rss",
-    "category": "AI"
-  },
-  {
-    "url": "https://runwayml.com/blog/rss",
-    "category": "AI"
-  },
-  {
-    "url": "https://lumalabs.ai/blog/news/rss",
-    "category": "AI"
-  },
-  {
-    "url": "https://meshy.statuspage.io/history.rss",
-    "category": "AI"
-  },
-  {
-    "url": "https://blog.google/feeds/latest/",
-    "category": "AI & Technology"
-  },
-  {
-    "url": "https://developers.googleblog.com/atom.xml",
-    "category": "AI & Technology"
-  },
-  {
-    "url": "https://ai.googleblog.com/feeds/posts/default?alt=rss",
-    "category": "AI & Technology"
-  },
-  {
-    "url": "https://blogs.windows.com/feed/",
-    "category": "Technology"
-  },
-  {
-    "url": "https://azure.microsoft.com/en-us/blog/feed/",
-    "category": "Technology"
-  },
-  {
-    "url": "https://devblogs.microsoft.com/visualstudio/feed/",
-    "category": "Technology"
+    "url": "https://feeds.feedburner.com/ign/all",
+    "category": "Gaming"
   }
 ]
-
