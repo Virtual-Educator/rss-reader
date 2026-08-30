@@ -181,8 +181,9 @@ def parse_feed(url: str, limit: int | None = None):
         title = html.unescape(entry.get("title", "")).strip()
         summary = entry.get("summary") or entry.get("description") or ""
         summary = strip_html(summary)
-        if len(summary) > 250:
-            summary = summary[:250].rstrip() + "…"
+        words = summary.split()
+        if len(words) > 75:
+            summary = " ".join(words[:75]).rstrip() + "…"
         img = extract_image(entry)
         published_dt = try_parse_datetime(entry)
         site = site_name_from_url(link) or site_name_from_url(url) or (fp.feed.get("title") if fp and fp.feed else "")
@@ -217,8 +218,9 @@ def ensure_default_config():
             "https://www.theguardian.com/world/rss",
         ],
         "AI in Higher Education": [
-            "https://hechingerreport.org/special_reports/artificial-intelligence/feed/",
-            "https://www.edsurge.com/arc/feeds/articles.rss",
+            "https://www.insidehighered.com/rss/news",
+            "https://www.highereddive.com/feeds/news/",
+            "https://hechingerreport.org/feed/",
             "https://er.educause.edu/rss",
         ],
         "AI in Business": [
@@ -308,8 +310,26 @@ st.markdown(
 @st.cache_data(ttl=300, show_spinner=False)
 def load_category_items(category: str, per_feed: int = 20):
     items = []
+    fetch_limit = 50 if category == "AI in Higher Education" else per_feed
     for url in st.session_state["feeds"].get(category, []):
-        items.extend(parse_feed(url, limit=per_feed))
+        items.extend(parse_feed(url, limit=fetch_limit))
+
+    if category == "AI in Higher Education":
+        ai_terms = (
+            "artificial intelligence", "generative ai", "genai", "chatgpt",
+            "large language model", "llm", "machine learning", "ai "
+        )
+        higher_ed_terms = (
+            "higher education", "college", "university", "faculty",
+            "student", "teaching", "learning", "academic", "campus"
+        )
+        filtered = []
+        for item in items:
+            text = f'{item.get("title", "")} {item.get("summary", "")}'.lower()
+            if any(term in text for term in ai_terms) and any(term in text for term in higher_ed_terms):
+                filtered.append(item)
+        items = filtered
+
     items.sort(key=lambda x: x.get("published_dt") or dt.datetime.min.replace(tzinfo=dt.timezone.utc), reverse=True)
     return items
 
@@ -364,7 +384,7 @@ def render_category_column(category: str, max_items: int):
     st.markdown(f'<h3 class="section-h">{html.escape(category)}</h3>', unsafe_allow_html=True)
     items = load_category_items(category)
     if not items:
-        st.info("No items found. Add feeds in the sidebar.")
+        st.info("No items found for this category.")
         return
     for i, item in enumerate(items[:max_items]):
         render_card(item, key_prefix=f"{category}_{i}")
