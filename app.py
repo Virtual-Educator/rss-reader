@@ -301,36 +301,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Sidebar
-
-with st.sidebar:
-    st.header("Settings")
-    per_col = st.slider("Stories per column", 3, 10, st.session_state["per_column"])
-    st.session_state["per_column"] = per_col
-
-    st.caption("Edit feeds below. One feed per line.")
-
-    # Editable feed URLs
-    for cat in st.session_state["category_order"]:
-        with st.expander(f"{cat} feeds"):
-            txt = st.text_area(cat, "\n".join(st.session_state["feeds"].get(cat, [])), height=120, key=f"{cat}_feeds")
-            st.session_state["feeds"][cat] = [l.strip() for l in txt.splitlines() if l.strip()]
-
-    # Reorder categories (one per line). Unknown names ignored; omitted names appended at end.
-    with st.expander("Category order"):
-        order_text = st.text_area(
-            "Order (one per line)",
-            value="\n".join(st.session_state["category_order"]),
-            height=150,
-            key="order_text",
-        )
-        proposed = [line.strip() for line in order_text.splitlines() if line.strip()]
-        known = list(st.session_state["feeds"].keys())
-        # Keep only known names, preserve given order, append any missing at the end
-        clean = [c for c in proposed if c in known] + [c for c in known if c not in proposed]
-        st.session_state["category_order"] = clean
-
-    st.caption("Archive data is stored in archive.json next to app.py.")
+# Sidebar removed
 
 # Data
 
